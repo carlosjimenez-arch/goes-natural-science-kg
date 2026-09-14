@@ -1,0 +1,119 @@
+schema_version: architecture-decision/1.0
+id: 0008
+title: Exact finite-bank CP-SAT curricularization with independent certificates
+status: accepted
+date: '2026-09-14'
+supersedes: null
+invariants:
+- 2
+- 3
+- 4
+- 8
+context: Phase 6 authorizes solver-based scheduling. Existing provisional decomposition
+  has 640 authored minutes per grade, not 9600. A finite authored activity bank is
+  necessary; the solver must not invent filler, infer pedagogical truth, or repair
+  rejected content.
+options:
+- name: CP-SAT with optional intervals
+  pros:
+  - Integer minutes, optional authored activities, no-overlap and reified grade/context
+    assignments.
+  - Objective bound distinguishes feasible solutions from proven optima.
+  cons:
+  - Runtime grows with activity alternatives; deterministic effort limits may return
+    unknown.
+- name: MILP
+  pros:
+  - Explicit linear objective and mature optimization ecosystem.
+  cons:
+  - Calendar and conditional dependency formulations need additional binary variables
+    and big-M constraints.
+- name: LLM-generated timetable
+  pros:
+  - Flexible prose output.
+  cons:
+  - Does not certify hard constraints or optimality.
+criteria:
+- Exact annual budgets, coverage and chronological dependencies.
+- Finite authored tasks, inspectable objective and reproducible scenarios.
+- Context only in curriculum; evidence anchors survive export.
+decision: Use OR-Tools 9.15.6755 CP-SAT with one worker, seeded deterministic effort
+  budget, optional interval placement, and an independent output audit. Publish five
+  grade files only for feasible/optimal audited results; failed runs emit diagnostics
+  and archive previous calendars. Use JSON-LD 1.1 with linked entities and lossless
+  typed payloads. Preserve graph-snapshot/1.0 and introduce chunk-traceable graph-snapshot/2.0;
+  retain existing GradeCurriculum and add SolvedGradeCurriculum for configurable budgets.
+consequences:
+- 'Budget tolerance is 0%: integer planned minutes permit exact accounting. This is
+  a planning certificate, not a claim about actual classroom attendance. Insufficient
+  activity minutes fail; no repetition is silently invented.'
+- All input skills are schedulable leaf skills with direct micro-skill decomposition.
+  Resolve higher-level hierarchy and skill-level dependencies before scheduling. Each
+  micro-skill receives exactly one initial teaching; subsequent authored practice
+  follows it.
+- Incoming PREREQUISITE edges are conjunctive AND constraints. CO_REQUISITE requires
+  joint authored teaching. REFINES and TRANSFERS_TO do not impose chronology. Alternative
+  OR prerequisite routes and probabilistic mastery are not implemented by this solver;
+  decision 0001 remains a proposed richer knowledge representation.
+- Cross-grade dependencies require an authored bridge in the first period of every
+  intervening grade, before dependent teaching. Explicit opening/continuation threads
+  require continuation in the immediately following grade. Continuity only covers
+  declared edges/threads; unmodeled pedagogical gaps are not certified.
+- 'Soft targets are pilot policy, not empirically optimal percentages: pure knowing
+  at most 30%; reasoning at least 30/30/35/40/40% in grades 2/3/4/5/6. TIMSS assessment
+  weights are not instructional-time prescriptions. This is more ambitious than the
+  minimum research rubric; assess feasibility and learning outcomes before adoption.'
+- Domain targets are physical science 34%, life science 33%, Earth/space science 33%.
+  Inquiry is cross-domain and rewarded separately. Health/environment are themes/context
+  applications rather than a fourth disjoint content domain.
+- Soft spacing rewards two distinct retrieval periods at least 480 instructional minutes
+  after initial teaching. At 160h across an assumed 40-week year this approximates
+  two weeks; at 140h it does not equal two calendar weeks. Actual calendars and holidays
+  are not modeled.
+- Context maximum is 60% of minutes AND units, preserving at least 40% abstract work.
+  Each setting is capped at 25% of annual minutes, with at least three distinct settings
+  whenever any are used. These are explicit testable design policies, not PISA-prescribed
+  ratios. Zero contextualization is allowed. Context wording is authored input; the
+  solver cannot add it.
+- Catalog evidence supports Salvadoran volcanoes, seismic risk, biodiversity, local
+  crops, water/sanitation and USD budgeting. PISA personal/local-national/global scope
+  is retained separately from inherited context type/domain tags. Legal citations
+  establish use of USD only; no financial advice or assertion about all currencies.
+- 'Weighted minute-equivalent objective: domain deviation + cognitive shortfall/excess
+  - inquiry minutes + 60 times missed retrieval periods + 60 times theme-period activations
+  - 60 times distinct context-grade pairs. Default weights are 2,5,1,3,1,1 respectively.
+  Targets remain soft; report deviations and bound.'
+- Graph JSON-LD includes stable IDs, parent and edge links, source-document links
+  and chunk-to-document references, with lossless payloads. Page/paragraph/offset
+  detail resolves through Phase 3 chunk manifests/index, reconstructed from corpus
+  manifests. Export does not establish entailment.
+- Engineering fixtures validate constraints only. The real provisional graph cannot
+  produce the requested full curricula until a sufficient justified activity bank
+  and appropriate graph are supplied. Solver approval metadata is preserved; no extra
+  CLI approval step is imposed.
+enforced_by:
+- tests/unit/test_sequencing.py::test_exact_budget_coverage_and_independent_audit
+- tests/unit/test_sequencing.py::test_repeated_solver_is_deterministic
+- tests/unit/test_sequencing.py::test_cross_grade_dependency_requires_bridge
+- tests/unit/test_sequencing.py::test_explicit_bridge_resumes_next_grade
+- tests/unit/test_sequencing.py::test_corequisites_need_joint_authored_teaching
+- tests/unit/test_sequencing.py::test_context_caps_and_abstract_units
+- tests/unit/test_sequencing.py::test_failed_build_archives_previous_calendars
+- tests/unit/test_sequencing.py::test_provisional_graph_keeps_chunk_evidence
+- tests/unit/test_sequencing.py::test_objective_weights_are_applied_explicitly
+evidence:
+  findings: findings.yaml; research motivates policies but does not identify optimal
+    instructional ratios. Context-specific primary evidence and retrieval dates are
+    in context-catalog.json.
+  claim_ids: []
+  source_url:
+  - https://developers.google.com/optimization/cp/cp_example
+  - https://developers.google.com/optimization/scheduling/job_shop
+  - https://developers.google.com/optimization/cp/cp_solver
+  - https://www.w3.org/TR/json-ld11/
+  - https://www.oecd.org/en/publications/pisa-2018-assessment-and-analytical-framework_b25efab8-en/full-report/component-5.html
+  - https://eric.ed.gov/?id=EJ991709
+  - https://journals.sagepub.com/doi/10.1111/j.0956-7976.2004.00737.x
+  retrieved_at: '2026-09-14'
+implementation_status: Implemented and tested with real CP-SAT on explicitly synthetic
+  engineering fixtures; actual provisional graph yields an insufficient-minutes diagnostic.

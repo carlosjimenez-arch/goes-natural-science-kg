@@ -1,0 +1,148 @@
+id: '0001'
+title: Use a versioned curriculum catalog with explicit requirement groups and derived plans
+status: proposed
+date: '2026-09-14'
+supersedes: null
+invariants:
+- 1
+- 2
+- 3
+- 5
+- 8
+context: The curriculum sources mix annual targets, grade-band endpoints, parallel dimensions and achievement
+  evidence. They do not supply a common causal prerequisite graph. The repository contract currently presupposes
+  a DAG and grade-bearing capability identifiers. This research questions those assumptions without changing
+  the contract or implementing production code. See findings.yaml for claim-level source URLs, retrieval
+  dates, limitations and the comparison matrix.
+options:
+- name: Prerequisite DAG
+  pros:
+  - Simple precedence and downstream-impact checks.
+  - Can encode conjunctive predecessors with explicit semantics.
+  cons:
+  - Alternative requirement groups and co-teaching need extensions.
+  - No learning-effect estimate or time optimization by itself.
+- name: Directed hypergraph
+  pros:
+  - Expresses conjunctions and alternative requirement sets directly.
+  cons:
+  - Does not supply teacher usability, timing semantics or empirical validity by itself.
+- name: Probabilistic prerequisite network
+  pros:
+  - Can represent uncertainty and support adaptive decisions after calibration.
+  cons:
+  - BKT, POKS and learning progressions are different model families.
+  - Response dependencies are not causal curriculum prerequisites.
+  - Requires data and revalidation after changes.
+- name: Q-matrix and cognitive diagnostic models
+  pros:
+  - Explicit assessment-to-attribute mapping; conjunctive and disjunctive item response models.
+  cons:
+  - Does not describe temporal prerequisites or a complete curriculum planner.
+  - Mapping and parameter changes can require recalibration.
+- name: Hierarchy-only ontology
+  pros:
+  - Familiar curriculum outline with low initial modeling burden.
+  cons:
+  - Cannot explain lateral prerequisite consequences or alternate routes without leaving the hierarchy-only
+    model.
+- name: Versioned catalog + requirement groups + activity scheduler + optional diagnostic layer
+  pros:
+  - Preserves source structures while representing AND/OR, co-teaching and separate evidence.
+  - Supports explainable grade-move feasibility analysis and stable identity.
+  cons:
+  - More entity and validation types than a plain DAG.
+  - Teacher auditability and maintenance advantage remain hypotheses requiring a pilot.
+criteria:
+- Co-requisites and AND/OR dependence semantics
+- Sequencing under explicit time constraints
+- Auditability by a nontechnical teacher
+- Maintenance when the curriculum changes
+- Explainable consequences of moving a grade 4 capability to grade 3
+decision: Recommend the hybrid catalog and rule representation. Use alternatives of conjunctive prerequisite
+  groups, not ungrouped AND/OR edge labels. Store co-teaching as activity/bundle or timing constraints.
+  Derive a strict-precedence DAG for a selected plan and use a separate time-constrained activity scheduler.
+  Keep assessment Q-mappings separate; defer probabilistic learner models until local data permit calibration.
+  A flat graph is not the best source of truth. This is a proposed conceptual choice, not approval of
+  a database, solver library or production schema.
+consequences:
+- Represent source statements, capabilities, grade placements, requirement groups, activities and assessment
+  evidence as distinct versioned entities.
+- Retain source-native units and parallel dimensions; cross-framework alignments are reviewed mappings
+  rather than asserted equivalences.
+- Do not treat appears_before as scientifically_required. Record evidence and scope for every proposed
+  prerequisite.
+- Preserve stable capability identities when grades change. A source-code/grade identifier can remain
+  an external or placement identifier.
+- Choose requirement routes before applying strict-precedence cycle checks. Other relationship types are
+  not automatically subject to that check.
+- Count activity minutes once, including setup, assessment and review; maintain the 9600-minute cap per
+  grade and parameterize session duration.
+- Report grade-move feasibility separately from developmental suitability and causal learning effects.
+- Keep prerequisite confidence, learner mastery probability and causal-effect uncertainty separate. Do
+  not invent probabilistic weights.
+- Pilot the proposed reasoning rubric and teacher rule-review workflow before treating them as validated
+  acceptance thresholds.
+- The current CLAUDE.md grade-bearing IDs, endpoint-only edge hashes and blanket graph constraints need
+  a later explicit contract decision before implementation. No silent override is made here.
+- PISA 2018 and the retrieved PISA 2025 draft vocabulary must be versioned rather than silently replacing
+  the contract competency enum.
+- No production code, infrastructure deployment, corpus ingestion, fitted model or implementation tests
+  are delivered in Phase 1.
+enforced_by: []
+evidence:
+  findings: ../findings.yaml
+  claim_ids:
+  - structure.and_correction
+  - structure.hypergraph_fact
+  - structure.probability_limit
+  - structure.q_models
+  - design.source_of_truth
+  - design.rule_semantics
+  - design.projection
+  - design.identity
+  - design.probabilities
+  - move.procedure
+  source_url:
+  - https://algs4.cs.princeton.edu/42digraph/
+  - https://aclanthology.org/C08-5001.pdf
+  - https://link.springer.com/article/10.1007/BF01099821
+  - https://journals.sagepub.com/doi/pdf/10.3233/IRG-2005-15%284%2903
+  - https://pmc.ncbi.nlm.nih.gov/articles/PMC4539161/
+  - https://wenchao-ma.github.io/GDINA/reference/GDINA-package.html
+  - https://www.w3.org/TR/skos-primer/
+  - https://developers.google.com/optimization/scheduling/job_shop
+  retrieved_at: '2026-09-14'
+profile_tradeoffs:
+  curriculum_designer: Preserve coherent phenomena, integrated tasks and curricular source distinctions;
+    do not atomize everything to force a graph.
+  graph_theory_researcher: Use explicit logical groups and acyclic strict precedence for chosen plans;
+    do not confuse a taxonomy, an observation network and a causal prerequisite system.
+  ai_software_engineer: Prefer versioned auditable tables/rules and deterministic derived artifacts; introduce
+    probabilistic fitting only when its data and validation can be reproduced.
+contract_changes_proposed_not_applied:
+- location: CLAUDE.md section 3.2 identifiers
+  change: Separate stable capability identity from grade-bearing placement/source identity.
+- location: CLAUDE.md section 3.2 edge vocabulary and edge IDs
+  change: Add identity and membership semantics for requirement groups; a hash of source, kind and target
+    alone cannot distinguish multiple rule groups.
+- location: CLAUDE.md Invariant 3 graph constraints
+  change: Clarify which selected strict-precedence projection must be acyclic and grade-monotone; preserve
+    validation of all required dependencies in that selected plan.
+- location: CLAUDE.md section 3.2 cognitive fields
+  change: Version framework competencies, preserving the 2018/draft-2025 distinction.
+future_acceptance_checks:
+- Reject ambiguous or empty requirement groups; demonstrate distinct AND and OR truth conditions on bounded
+  examples.
+- Show that the alternative-route cycle counterexample has a valid selected plan while a mandatory cycle
+  is rejected.
+- Explain a 4→3 move with violated rules, feasible alternatives, bundle effects, capacity and source-alignment
+  changes.
+- Verify stable identity under placement changes and lineage under genuine capability splits/merges.
+- Verify shared activities are counted once and required coverage cannot silently disappear to fit a budget.
+- Have teachers independently review rules and task rubrics; report disagreement before setting usability
+  or reliability acceptance cutoffs.
+- Validate optional student models on held-out local responses with calibration and drift checks before
+  their use in placement.
+implementation_status: Research proposal only; the repository has no production decision schema or implementation
+  test suite yet.

@@ -1,0 +1,62 @@
+schema_version: architecture-decision/1.0
+id: '0002'
+title: Freeze context-free contracts and stable identities before domain implementation
+status: accepted
+date: '2026-09-14'
+supersedes: null
+invariants: [1, 2, 3, 4, 5, 7, 8]
+context: >-
+  The maintainer explicitly requested Phase 2 scaffolding, Pydantic v2 contracts,
+  deterministic IDs and semantic graph diffs. The sibling pyprojects use uv and a
+  src layout; math's national_corpus_policy separates curriculum alignment from
+  grounding. Their broad dependency ranges and scattered contracts are not copied.
+  No production domain solver or generative agent is authorized in this phase.
+options:
+  - name: Hash complete mutable records for identity
+    pros: [No separate identity key to maintain]
+    cons: [A grade or label edit appears as deletion and addition rather than modification]
+  - name: Hash immutable canonical identity and separately hash revision content
+    pros: [Readable semantic diffs, Stable identity across grade moves and editorial corrections]
+    cons: [Identity namespace and key require persistent editorial stewardship]
+criteria:
+  - Stable and deterministic identity
+  - Context-free graph archetypes
+  - Closed and versioned data contracts
+  - Reviewable diffs and offline validation
+decision: >-
+  Keep goes-natural-science-kg and src/goes_natural_science_kg. Use uv with exact
+  direct pins and uv.lock. Place contracts in schemas/, configuration in config.py,
+  prompt files in root prompts/, and reserve agents/, curriculum/, eval/ and corpus
+  stages. Use immutable identity namespace/key content, a readable key and a
+  16-character SHA-256 suffix for entity IDs. Canonical full-record hashes identify
+  revisions. Canonicalize order-insensitive references; preserve curriculum unit
+  order. Implement semantic node/edge additions, removals and modifications without
+  a graph database or inference engine.
+consequences:
+  - The directory name and environment prefix remain those of the existing repository.
+  - JSON arrays become tuples inside frozen Pydantic models; unknown fields are rejected.
+  - ContextTag is permitted only in CurriculumUnit; graph objects reject contextualization fields.
+  - Edge identity names a persistent assertion; changing its endpoints or strength is a revision of that assertion.
+  - A changed identity denotes a genuinely different entity; there is no fuzzy or label-based reconciliation.
+  - Inline prerequisite lists must mirror snapshot PREREQUISITE and CO_REQUISITE edges exactly.
+  - All plain prerequisite edges in this interchange version are conjunctive; OR groups remain a future separately versioned contract under proposed decision 0001.
+  - Integer unit and grade totals are checked; shared micro-skills do not multiply the cost of a unit that teaches them together.
+  - Source licence metadata and download completion are distinct lifecycle states.
+  - prompts/*.prompt preserves requested front-matter and Spanish text without introducing extra Markdown files.
+  - data/processed and data/manifests remain trackable; raw data, interim files and credentials are ignored.
+  - Linear typed-record traversal is an explicit scoped exception to the earlier blanket vectorization rule; implemented operations have benchmarks.
+  - The preexisting .env is preserved and no repository git history is created by this phase.
+enforced_by:
+  - tests/unit/test_contracts.py::test_ids_are_stable_and_revision_hashes_change
+  - tests/unit/test_contracts.py::test_frozen_and_closed
+  - tests/unit/test_contracts.py::test_graph_integrity
+  - tests/unit/test_contracts.py::test_budget_and_shared_skill_accounting
+  - tests/unit/test_diff.py::test_golden_diff
+  - tests/property/test_determinism.py::test_hash_seed_independence
+  - tests/unit/test_repository.py::test_schema_exports_are_frozen
+  - tests/unit/test_repository.py::test_decisions_validate_and_enforcement_exists
+  - tests/unit/test_repository.py::test_gitignore_actual_behavior
+  - tests/unit/test_repository.py::test_all_direct_dependency_versions_are_exact
+  - tests/unit/test_repository.py::test_data_contracts_are_centralized
+  - tests/unit/test_repository.py::test_prompt_frontmatter_and_spanish_body
+implementation_status: Implemented contracts and infrastructure only; no curriculum construction or probabilistic fitting.

@@ -1,0 +1,293 @@
+schema_version: architecture-decision/1.0
+id: '0010'
+title: Structure the pipeline as a batch AI system with lineage, baselines and drift control
+status: proposed
+date: '2026-09-14'
+supersedes: null
+invariants:
+- 2
+- 3
+- 4
+- 5
+- 6
+- 8
+context: |
+  The maintainer asked to organize the repository as a production ML/AI system following
+  the frameworks in Chip Huyen's "Designing Machine Learning Systems" and "AI Engineering",
+  translated to this domain rather than copied as a table of contents. The system trains no
+  model. It composes LLM calls, deterministic checks and a CP-SAT solver to produce one
+  reviewed artifact family: a curricular knowledge graph and a derived calendar. It runs in
+  batch, a few times per curriculum revision, and every output is reviewed by humans before
+  any institutional use.
+
+  INVENTORY OF WHAT ALREADY FULFILS A FRAMEWORK FUNCTION UNDER ANOTHER NAME (verified in
+  the tree on 2026-09-14):
+  - Data versioning of the corpus input: data/manifests/corpus.jsonl and
+    discovery.jsonl (SourceDocument with sha256, bytes, license gate verdict, policy_version);
+    data/manifests/coverage.json (CorpusCoverage by grade and country). Raw bytes are
+    content-addressed and re-fetchable (decision 0004).
+  - Feature pipeline instrumentation, partial: ParsedDocument, NormalizedText with
+    reversible offset maps, EvidenceChunk anchors, EmbeddingRecord with truncated=False,
+    data/manifests/run-timings.json and data/processed/benchmarks/corpus-benchmark.json.
+  - Model registry equivalent: prompts/*.prompt with typed front-matter, PromptRegistry,
+    VersionedPrompt with semantic version and changelog, prompt digests in prompts/manifest.json.
+    Model identifiers are pinned in OrchestrationSettings and ExperimentSettings.
+  - Experiment tracking: data/processed/prompt-evaluation/{cells,observations,report.json}
+    (EvaluationCell, EvaluationObservation with request/response digests, latency, tokens,
+    cost, provider model_version). Decision 0007 records provisional selections.
+  - Offline evaluation harness: eval/harness.py and eval/metrics.py compute coverage,
+    prerequisite precision/recall, invalid reference rate, unsupported claim rate and a
+    binary judge_correct against synthetic negatives. Bipartite matching prevents one
+    generated node from covering several references.
+  - Golden set, partial: tests/golden/prompt-evaluation/cases.jsonl, 46 AnnotatedCase
+    records (40 evaluation, 6 demonstration) across grades 2 to 6 and three domains.
+    All 46 are agent_authored_pending_human_review; the annotator field is honest about it.
+  - Artifact manifests and lineage, partial: ArtifactManifest (git_sha, git_dirty, seed,
+    settings_hash, input and output digests) per artifact directory; SolverReport carries
+    input_sha256, settings_sha256 and solver_version; OrchestrationReport carries
+    prompt_versions and every ItemOutcome with all ballots and verdicts per revision;
+    CachedGeneration stores provider_model_version per cached call.
+  - Reliability behaviours already tested: invalid provider JSON is rejected by contract
+    (tests/integration/test_agent_hierarchy.py::test_real_invalid_response_is_rejected_by_contract),
+    cache misses resume without fabrication, corrupt manifests are not discarded silently,
+    rejected sources are recorded and the batch continues, failed solver builds exit 2
+    with diagnostics and archive previous calendars.
+  - Consistency: property tests for permutation invariance and cache-key determinism;
+    Invariant 8 requires seeds, sorted iteration and injected clocks.
+  - Human gate: ItemOutcome.status needs_human_review; EvaluationReport refuses production
+    promotion without human_reviewed=True; LicenseEvidence requires reviewed_by and time.
+  - Cost telemetry: estimated_usd, token counts and provider_requests per replicate.
+
+  WHAT DOES NOT EXIST YET: baselines, slice-level reporting, judge validation against
+  humans, inter-judge agreement, behavioural perturbation tests, a corpus provenance barrier
+  against generated text, a versioned official baseline with cut-off date, corpus
+  composition drift alerts, a model-version canary, model version on graph nodes, and a
+  per-run immutable RunManifest. Decision 0011 specifies the evaluation half.
+options:
+- name: Translate the framework concept by concept into this batch artifact pipeline (chosen)
+  pros:
+  - Keeps the existing src layout, contracts and manifests; adds only lineage, evaluation
+    and drift components that are missing.
+  - Every framework term is bound to a testable artifact or explicitly discarded.
+  cons:
+  - Some framework vocabulary (training, serving, features) is reused with a shifted
+    meaning; the mapping table below is the only authoritative glossary.
+- name: Adopt a generic MLOps platform layout (feature store, model registry service, serving layer)
+  pros:
+  - Familiar to ML platform engineers.
+  cons:
+  - Adds services with no traffic to serve; maintenance cost buries lineage and evaluation,
+    which are the parts that actually decide adoption.
+- name: Keep the repository as a research pipeline with ad hoc reports
+  pros:
+  - No structural work.
+  cons:
+  - Cannot defend the architecture against a single-call baseline, cannot attribute a graph
+    change to a curriculum change versus a model change, cannot answer why a skill sits in
+    one grade in front of a policy decision-maker.
+criteria:
+- Each framework concept is either bound to a concrete artifact, contract and test, or
+  discarded with a reason.
+- Nothing is built for traffic the system does not have.
+- Lineage answers "why is this micro-skill in grade 4" from the final artifact alone.
+- A model or prompt version change cannot regenerate production artifacts without passing
+  a frozen canary.
+- Pipeline output can never re-enter the corpus or the golden set.
+decision: |
+  Adopt the translation below as the authoritative glossary, record what is discarded, and
+  implement evaluation and lineage before any further pipeline capability (order in the
+  consequences). Corrections to the maintainer's starting mapping are marked CORRECTED.
+
+  TRANSLATION
+  business_objective -> student learning and ministry adoption. Not measurable by the
+    system. The closest observable proxies are the blind expert acceptance rate of published
+    items and, later, teacher pilot outcomes. Reported as proxies, never as the objective.
+  ml_objective -> graph quality against a human reference. CORRECTED: the proposed list
+    mixes three kinds of measures. (1) Validity gates: schema adherence, resolvable citation
+    rate, acyclicity, budget feasibility. These are necessary conditions computed by code;
+    a perfect score means "not broken", not "good". (2) Quality against human reference:
+    coverage of the official skill map, prerequisite precision/recall, grade placement
+    agreement, atomicity and observability of micro-skills, misconception relevance. Only
+    these express quality, and only once the reference is human-annotated. (3) Reliability:
+    run-to-run consistency. A deterministic pipeline is perfectly consistent and can be
+    perfectly wrong; consistency belongs to Reliability, not to the objective. The current
+    harness measures mostly (1) plus (2) against an agent-authored reference, which is
+    measuring the easy part. Coverage of the official skill map is also circular whenever
+    the official programa is retrievable evidence for generation; Invariant 6 already
+    forbids grounding nodes in curriculum documents, and the evaluation must keep the
+    official baseline as reference only.
+  training_data -> two independently versioned inputs. (a) The corpus: data/manifests
+    corpus.jsonl plus content-addressed raw bytes; the system reads it. (b) The reference
+    set: human-annotated cases under data/reference/, read only by the evaluator. They never
+    share files, chunk ids or manifests; a test asserts empty intersection of source digests
+    and that no reference case text is retrievable from the index. The 46 existing cases are
+    agent-authored and remain a smoke set until re-annotated by humans (decision 0011).
+  feature_engineering -> context assembly: chunking, embedding, retrieval and the packet
+    injected into each prompt. CORRECTED: it must be measured as its own stage with its own
+    reference: retrieval recall@k against human-anchored evidence, context token budget
+    used, fraction of injected chunks actually cited, chunk boundary integrity, and
+    per-stage timing. Today only timing and truncation are recorded.
+  model_development -> the composed system version. CORRECTED: (prompt_version,
+    graph_topology, llm_version) is incomplete. The unit that changes behaviour is
+    SystemVersion = {prompt id/version per role, hierarchy topology and loop policy
+    (votes, threshold, max revisions), generator and judge model identifiers and provider
+    model_version, embedding model and retrieval parameters, chunking version, solver
+    version and settings hash, code git_sha}. Any component change is a new SystemVersion
+    and triggers the canary.
+  offline_evaluation -> reference set plus slices plus baselines plus judge validation
+    (decision 0011). It is the only evaluation the system has; there is no online phase.
+  deployment -> publication of a reviewed release: CLI build, versioned artifacts under
+    data/, a RunManifest under runs/, and a generated static HTML report. CORRECTED:
+    "dashboard" means a generated file per run, not a live service.
+  distribution_shift -> three separate sources (D1 baseline, D2 corpus, D3 model), each
+    with its own artifact and alert; judge model changes are D3 with a judge-specific canary.
+  continual_learning -> a re-run policy. Triggers: official baseline change (D1), corpus
+    admission change (D2), SystemVersion change (D3 after canary), or accumulated human
+    corrections. Human feedback returns by two traceable paths: output overrides and prompt
+    revisions (decision 0011, human-in-the-loop).
+  monitoring -> artifact quality between runs, the drift artifacts, and per-run operational
+    telemetry that already exists (cost, latency, cache hit ratio, provider error rate,
+    needs_human_review fraction). There is no inference traffic to monitor.
+
+  DISCARDED, WITH REASON (the maintainer's hypothesis is confirmed)
+  - Feature store: features are chunks and embeddings computed once per corpus version and
+    content-addressed on disk; no online/offline skew exists because there is no online path.
+  - Online serving, autoscaling, inference latency optimization: the system runs a handful
+    of batch jobs per curriculum revision; latency is measured per run for cost, not SLOs.
+  - A/B testing with live users and shadow deployment: there are no users of an inference
+    endpoint. The equivalent is the offline comparison of SystemVersions on the same
+    reference set, reported with the same slices.
+  - Model training, fine-tuning, hyperparameter search: no weights are learned. The nearest
+    analogue is prompt variant selection, already handled as a controlled experiment.
+  - Real-time data pipelines and streaming: corpus changes are discrete admissions.
+  - Model compression and hardware optimization: provider-hosted models.
+  - Online feedback loops and bandits: feedback arrives through human review sessions.
+  Everything kept applies with full force: data and artifact versioning, lineage, baselines,
+  slice evaluation, drift detection, evaluation of the evaluators, reliability tests.
+
+  DEGENERATE LOOP BARRIER
+  SourceDocument gains provenance: external | generated. The license gate rejects generated
+  before licence evaluation; the ingestion pipeline refuses to index any document whose
+  sha256 matches a digest recorded in any RunManifest output. The reference set gains an
+  annotation_protocol field asserting no system assistance and a blind flag; a case
+  produced while viewing system output is stored as a regression case, never as a blind
+  reference case.
+
+  LINEAGE
+  Every published micro-skill and edge resolves, from the final artifact and the run
+  manifest alone: source document -> chunk ids -> prompt id/version per level -> generator
+  model and provider model_version -> each judge verdict per revision -> revision count ->
+  human override, if any -> code git_sha. A per-run immutable RunManifest under
+  runs/{run_id}/ records the SystemVersion, input digests, metrics with slices, drift
+  status, canary result and output digests. Node-level lineage is stored in an
+  EntityLineage contract keyed by stable id, exported alongside the graph, not inside the
+  frozen graph-snapshot/1.0 payload.
+consequences:
+- |
+  FOLDER STRUCTURE (one line per folder, function in this system). Existing folders are kept.
+  config/subjects/<subject>.yaml       domains, strands, frameworks, grades, budgets; the
+                                       adaptability surface for a new subject
+  data/manifests/                      corpus input version: sources, verdicts, digests,
+                                       coverage, composition per run (D2)
+  data/baselines/official/<cutoff>/    versioned official curriculum baseline with cut-off
+                                       date and machine diff to the previous cut-off (D1, B0)
+  data/reference/cases/                human-annotated reference set (evaluation input);
+                                       never read by generation
+  data/reference/canary/               frozen subset re-run on any SystemVersion change (D3)
+  data/reference/annotations/          raw per-annotator labels, adjudications, agreement
+  data/reference/regression/           cases derived from human corrections of outputs
+  data/processed/                      product tables, contracts, provisional graph,
+                                       calendars, evaluation reports
+  data/processed/evaluation/           per-SystemVersion baseline table, slice table,
+                                       judge agreement, behavioural tests, generated HTML
+  data/graph/<run_id>/                 published graph release with lineage export
+  runs/<run_id>/                       immutable RunManifest, metrics, drift, canary result
+  prompts/                             versioned Spanish prompt artifacts (model registry)
+  decisions/                           schema-validated design decisions
+  src/.../schemas/                     all contracts including lineage and evaluation
+  src/.../corpus/                      context assembly stage with its own metrics
+  src/.../agents/                      SystemVersion-parameterized composition
+  src/.../eval/                        baselines, slices, judge validation, behavioural
+                                       tests, canary; the maintainability test surface
+  src/.../lineage/                     RunManifest writer, EntityLineage builder, provenance
+                                       resolution queries
+  src/.../curriculum/                  CP-SAT scheduling and independent audit
+  tests/golden/                        small attributed fixtures for tests only, distinct
+                                       from data/reference
+- |
+  IMPLEMENTATION ORDER. 1 Reference set re-annotation protocol and human labels (0011).
+  2 Baselines B0, B1, B2 against S on the same reference set, with slices; publish the
+  table. 3 Judge validation: human agreement, inter-judge agreement, bias perturbations;
+  disable failing judges. 4 Behavioural tests: invariance, directional expectation,
+  consistency, robustness. 5 Lineage: EntityLineage, RunManifest, provenance barrier.
+  6 Drift: official baseline versioning, corpus composition alerts, model canary with
+  llm_version on nodes. 7 Context assembly instrumentation with retrieval recall. 8 Only
+  then, pipeline changes motivated by measured gaps. No new agent capability is added
+  before step 4 is green.
+- |
+  WHAT THE REPOSITORY FULFILS POORLY TODAY. Reference set is agent-authored and shared with
+  few-shot demonstrations of the evaluated prompts. Evaluation aggregates by role and
+  technique only; no grade, domain or cognitive slices. Judges are validated only against
+  synthetic negatives, never against humans; no inter-judge statistic. No baseline exists,
+  so the hierarchy is undefended against a single call. provider_model_version lives only in
+  cache records and never reaches ItemOutcome, nodes or edges. ArtifactManifest is per
+  directory; there is no run identifier joining corpus version, prompts, models, metrics
+  and outputs. SourceDocument has no provenance field. Official curricula have no cut-off
+  version or diff. CorpusCoverage counts documents but does not alert on composition change.
+  Consistency is tested by permutation, not by two full runs. The root manifest.json is not
+  verified by any test. tests/golden mixes test fixtures with the de facto evaluation set.
+- The four requirements translate to tests as follows. Reliability - a failed judge call, an
+  invalid JSON response, a failed download or a cache miss each produce a typed outcome
+  (needs_human_review, rejected, failed) visible in the RunManifest; a test per failure mode
+  asserts no approved item exists downstream of a failed component. Scalability - the axis is
+  graph size and subject count; benchmarks generate synthetic graphs of 5 subjects and 50k
+  nodes for sparse cycle checks, diff, lineage export and solver preflight, and report
+  projected LLM cost linearly from measured per-call cost. Maintainability - the test is the
+  evaluation harness; a prompt change must reproduce the slice table and canary in one
+  command and the diff against the previous SystemVersion is the review artifact.
+  Adaptability - a new subject costs a config/subjects file, a reference set and a prompt
+  variant set; prompts are per subject, so the honest cost is configuration plus reference
+  plus Spanish prompt authoring, not configuration alone.
+- Decision 0009 is left unassigned for the pending session-length decision named in
+  CLAUDE.md; identifiers stay monotonic.
+enforced_by: []
+profile_tradeoffs:
+  curriculum_designer: The ministry adopts a curriculum only if each placement can be
+    justified with sources and expert review; lineage and human annotation protocols are
+    therefore adoption requirements, not engineering overhead.
+  graph_theory_researcher: Structural validity (acyclicity, closure, monotone grades) is
+    cheap and necessary; it says nothing about whether a prerequisite is pedagogically true.
+    Quality metrics need a human reference graph, and inter-annotator agreement bounds the
+    achievable score.
+  ai_software_engineer: The system is batch and low-volume; serving infrastructure is
+    discarded so that versioning, lineage, evaluation and drift receive the maintenance
+    budget.
+contract_changes_proposed_not_applied:
+- location: src/goes_natural_science_kg/schemas/corpus.py::SourceDocument
+  change: Add provenance Literal["external", "generated"] with default external forbidden
+    for new records; gate rejects generated before licence evaluation.
+- location: src/goes_natural_science_kg/schemas/lineage.py (new)
+  change: SystemVersion, EntityLineage (stable id -> chunk ids, prompt versions, model
+    versions, verdicts per revision, revisions, override id, git_sha) and RunManifest
+    (run_id, system_version, input digests, metrics with slices, drift status, canary,
+    outputs, generated_at from injected clock).
+- location: src/goes_natural_science_kg/schemas/orchestration.py::ItemOutcome
+  change: Add generator_model_version and judge_model_version fields copied from
+    CachedGeneration at aggregation time.
+- location: src/goes_natural_science_kg/schemas/prompt_evaluation.py::AnnotatedCase
+  change: Add annotation_protocol, blind flag, slice keys (grade, domain, cognitive_domain,
+    capability_tier) and per-annotator label references.
+- location: src/goes_natural_science_kg/schemas/ingestion.py::CorpusCoverage
+  change: Add CorpusComposition per run (counts by country, publication year, document type,
+    provenance) with tolerance thresholds.
+future_acceptance_checks:
+- tests/unit/test_provenance_barrier.py::test_generated_documents_are_rejected_before_licence
+- tests/unit/test_provenance_barrier.py::test_run_outputs_cannot_be_indexed
+- tests/unit/test_lineage.py::test_every_published_micro_skill_resolves_full_lineage
+- tests/unit/test_lineage.py::test_run_manifest_is_immutable_and_hash_complete
+- tests/unit/test_reference_isolation.py::test_reference_and_corpus_digests_are_disjoint
+- tests/integration/test_canary.py::test_model_version_change_without_canary_blocks_publication
+- tests/integration/test_determinism.py::test_two_full_runs_are_byte_identical
+- tests/benchmarks/test_scale.py::test_fifty_thousand_node_graph_operations
+implementation_status: Proposed design only; no code, contract or artifact change applied
+  in this turn.

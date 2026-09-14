@@ -1,0 +1,138 @@
+{
+  "edges": [
+    {
+      "id": "edge-flow-prerequisite-d7164d0320707a84",
+      "identity": {
+        "key": "flow-prerequisite",
+        "namespace": "fixture"
+      },
+      "justification": "Handcrafted fixture assertion, not research evidence.",
+      "source": "micro-observe-flow-0fb95d7d2298d945",
+      "source_refs": [
+        "source-official-book-969677b339792c18"
+      ],
+      "strength": 0.5,
+      "target": "micro-explain-flow-90aea0716b1907e9",
+      "type": "PREREQUISITE"
+    },
+    {
+      "id": "edge-transfer-edit-3af44b34771b4b3a",
+      "identity": {
+        "key": "transfer-edit",
+        "namespace": "fixture"
+      },
+      "justification": "Handcrafted fixture assertion, not research evidence.",
+      "source": "micro-observe-flow-0fb95d7d2298d945",
+      "source_refs": [
+        "source-official-book-969677b339792c18"
+      ],
+      "strength": 0.8,
+      "target": "skill-matter-6e515978910288d4",
+      "type": "TRANSFERS_TO"
+    },
+    {
+      "id": "edge-transfer-new-e457ba65c2c4ad01",
+      "identity": {
+        "key": "transfer-new",
+        "namespace": "fixture"
+      },
+      "justification": "Handcrafted fixture assertion, not research evidence.",
+      "source": "skill-matter-6e515978910288d4",
+      "source_refs": [
+        "source-official-book-969677b339792c18"
+      ],
+      "strength": 0.5,
+      "target": "skill-new-topic-7929dfcfda52b894",
+      "type": "TRANSFERS_TO"
+    }
+  ],
+  "micro_skills": [
+    {
+      "cognitive_domain": "applying",
+      "confidence": 0.7,
+      "estimated_minutes": 20,
+      "evidence_of_mastery": "Compare two measured flows using the same interval.",
+      "grade_band": {
+        "maximum": 3,
+        "minimum": 3
+      },
+      "id": "micro-observe-flow-0fb95d7d2298d945",
+      "identity": {
+        "key": "observe-flow",
+        "namespace": "fixture"
+      },
+      "knowledge_object": "measured flows",
+      "misconceptions": [
+        "Flow depends only on container size"
+      ],
+      "observable_verb": "compare",
+      "parent_skill_id": "skill-matter-6e515978910288d4",
+      "prerequisites": [],
+      "source_refs": [
+        "source-official-book-969677b339792c18"
+      ]
+    },
+    {
+      "cognitive_domain": "reasoning",
+      "confidence": 0.7,
+      "estimated_minutes": 25,
+      "evidence_of_mastery": "Justify a prediction using measured evidence.",
+      "grade_band": {
+        "maximum": 3,
+        "minimum": 3
+      },
+      "id": "micro-explain-flow-90aea0716b1907e9",
+      "identity": {
+        "key": "explain-flow",
+        "namespace": "fixture"
+      },
+      "knowledge_object": "a flow prediction",
+      "misconceptions": [],
+      "observable_verb": "justify",
+      "parent_skill_id": "skill-matter-6e515978910288d4",
+      "prerequisites": [
+        {
+          "id": "micro-observe-flow-0fb95d7d2298d945",
+          "type": "PREREQUISITE"
+        }
+      ],
+      "source_refs": [
+        "source-official-book-969677b339792c18"
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "domain": "matter",
+      "hierarchy_level": 0,
+      "id": "skill-matter-6e515978910288d4",
+      "identity": {
+        "key": "matter",
+        "namespace": "fixture"
+      },
+      "label": "Matter and interactions",
+      "origin_framework": {
+        "name": "handcrafted-fixture",
+        "version": "1"
+      }
+    },
+    {
+      "domain": "matter",
+      "hierarchy_level": 0,
+      "id": "skill-new-topic-7929dfcfda52b894",
+      "identity": {
+        "key": "new-topic",
+        "namespace": "fixture"
+      },
+      "label": "New topic",
+      "origin_framework": {
+        "name": "handcrafted-fixture",
+        "version": "1"
+      }
+    }
+  ],
+  "source_ids": [
+    "source-official-book-969677b339792c18"
+  ],
+  "version": "after"
+}

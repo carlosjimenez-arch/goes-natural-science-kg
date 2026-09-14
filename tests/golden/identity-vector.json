@@ -1,0 +1,8 @@
+{
+  "expected_id": "skill-stable-example-1a850be47c87840d",
+  "identity": {
+    "key": "stable-example",
+    "namespace": "fixture"
+  },
+  "kind": "skill"
+}

@@ -1,0 +1,47 @@
+schema_version: architecture-decision/1.0
+id: '0007'
+title: Measured provisional prompt selection
+status: pending
+date: 2026-09-14
+supersedes: null
+invariants:
+- 2
+- 3
+- 4
+- 8
+context: Three paired replicas per technique on forty agent-authored cases. The dataset
+  has not received human review. See the frozen report and raw provider audit observations.
+options:
+- name: cot
+  pros:
+  - Measured on the same paired cases and settings.
+  cons:
+  - Reference labels await human review; source entailment remains model-assessed.
+- name: few_shot
+  pros:
+  - Measured on the same paired cases and settings.
+  cons:
+  - Reference labels await human review; source entailment remains model-assessed.
+- name: cot_few_shot
+  pros:
+  - Measured on the same paired cases and settings.
+  cons:
+  - Reference labels await human review; source entailment remains model-assessed.
+criteria:
+- Apply the predeclared eligibility and lexicographic rules in decision 0006.
+- Require human review before production promotion.
+decision: 'Provisional empirical choices: age_appropriateness_judge=few_shot; cognitive_judge=cot;
+  curricular_judge=few_shot; curricularization=few_shot; decomposition=None; evidence_judge=few_shot;
+  graph_judge=cot_few_shot. Production choices: none pending human review.'
+consequences:
+- No experimental variant is automatically routed into the production hierarchy.
+- A role with no eligible variant remains unselected and needs investigation of reference
+  labels, evidence or prompt behavior.
+- The same held-out cases must not be used for repeated tuning followed by an unqualified
+  generalization claim.
+- Full metrics and the reasons for each rejected variant are in data/processed/prompt-evaluation/report.json.
+enforced_by:
+- tests/integration/test_prompt_evaluation_replay.py::test_complete_recorded_experiment_and_report_replay
+- tests/unit/test_prompt_evaluation.py::test_production_selection_requires_identified_human_review
+implementation_status: 630 cells complete; 1568 unique recorded requests; estimated
+  USD 38.88. Selection remains pending human reference review.

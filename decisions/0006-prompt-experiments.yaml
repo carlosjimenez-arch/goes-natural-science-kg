@@ -1,0 +1,86 @@
+schema_version: architecture-decision/1.0
+id: '0006'
+title: Versioned Spanish prompts and provisional paired evaluation
+status: accepted
+date: 2026-09-14
+supersedes: null
+invariants:
+- 1
+- 2
+- 3
+- 4
+- 5
+- 7
+- 8
+context: Compare three prompt techniques for seven critical roles using forty held-out
+  cases and six disjoint demonstrations. No teacher-reviewed golden set was available.
+  Authored reference decompositions are explicitly provisional, never attributed to
+  teachers.
+options:
+- name: Select by inspection
+  pros:
+  - Cheap
+  cons:
+  - No measured reliability or variance
+- name: Paired measured comparison with human promotion gate
+  pros:
+  - Auditable outputs and usage
+  - Bounded revisions
+  - Explicit uncertainty
+  cons:
+  - Model-based semantic scoring
+  - Human reference review remains necessary
+criteria:
+- Three distinct provider requests per case and variant; seeds 0/1/2 with fixed temperature
+  0.2.
+- Initial schema adherence at least 0.95 and initial judge accuracy at least 0.95
+  where applicable.
+- Final pass rate at least 0.80 and sample standard deviation across three replicate
+  pass rates at most 0.10.
+- No invalid references remain; missing token usage prevents cost-based eligibility.
+- Rank eligible variants lexicographically by final pass rate, initial pass rate,
+  lower total cost, then lower request latency.
+- No production promotion until all reference cases and demonstrations are reviewed
+  by an identified human.
+- Every available quality-rate sample standard deviation must be at most 0.10; latency
+  and cost variability are reported separately in their own units.
+decision: Store front-matter and full examples as versioned prompt artifacts. Execute
+  through PromptRegistry with exact variables. Record all initial and revised outputs,
+  including failures. Freeze these selection criteria before inspecting comparative
+  quality scores; provider transport status was inspected first to detect runtime
+  errors. Report empirical choices as provisional. If no variant meets thresholds,
+  select none. No subjective weighted score is used.
+consequences:
+- Pure CoT means private checking instructions without demonstrations; no chain-of-thought
+  transcripts are requested or stored.
+- Few-shot means six full source-backed input/output demonstrations, including a negative
+  and correction; provider thinking budget is held constant across techniques.
+- Pedagogical prerequisites and cognitive labels in the draft reference set remain
+  hypotheses for teacher review.
+- Exact quote verification supports traceability; semantic entailment is an independent
+  model judgment and can be wrong.
+- Curricularization evaluates budget, ordering, coverage and citation existence plus
+  an independent model review of scientific task support; hypothetical context is
+  distinguished from factual assertions.
+- Three replicates and batch size four do not establish population generalization
+  or causal superiority.
+- Failed revision-three items remain censored failures and are never silently discarded.
+- Token-derived list-price estimates are not invoices; SDK retries with absent usage
+  can incur unobserved charges.
+- Requests with identical hashes share a lock. A discovered concurrent cache-write
+  race required re-scoring the retained observations and fetching missing branches;
+  the superseded run is excluded from the final comparison.
+enforced_by:
+- tests/unit/test_prompt_evaluation.py::test_registry_variants_and_disjoint_examples
+- tests/unit/test_prompt_evaluation.py::test_unversioned_prompt_is_rejected
+- tests/unit/test_prompt_evaluation.py::test_cell_revisions_are_bounded
+- tests/integration/test_prompt_evaluation_replay.py::test_identical_concurrent_requests_share_one_recorded_provider_call
+implementation_status: Comparison is measured on provisional annotations; production
+  selection remains gated on human review.
+evidence:
+  findings: Provider list pricing and structured response configuration
+  claim_ids: []
+  source_url:
+  - https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing
+  - https://cloud.google.com/vertex-ai/generative-ai/docs/reference/rest/v1beta1/GenerationConfig
+  retrieved_at: 2026-09-14

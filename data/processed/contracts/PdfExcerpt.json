@@ -1,0 +1,1 @@
+{"additionalProperties":false,"description":"Audited derived fixture; local page n maps to physical source_pages[n-1].","properties":{"sha256":{"pattern":"^[0-9a-f]{64}$","title":"Sha256","type":"string"},"source_pages":{"items":{"minimum":1,"type":"integer"},"title":"Source Pages","type":"array"}},"required":["sha256","source_pages"],"title":"PdfExcerpt","type":"object"}

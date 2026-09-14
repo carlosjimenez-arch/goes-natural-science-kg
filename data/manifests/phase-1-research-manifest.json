@@ -1,0 +1,28 @@
+{
+  "schema_version": "research-manifest/1.0",
+  "generated_at_utc": "2026-09-14",
+  "git_sha": null,
+  "git_dirty": null,
+  "seed": null,
+  "unavailable_metadata_reason": "Research-only artifact generation; repository is not initialized as git; no stochastic pipeline or settings configuration was executed.",
+  "settings_hash": null,
+  "inputs": {
+    "CLAUDE.md": "721f61f54835e4a7ba4e59e0bb4814b3d3037c31841e21bfab28dd239bd74f80"
+  },
+  "retrieval_scope": "Primary-source web research; URLs and access limitations are in findings.yaml. No source-file hashes or successful local downloads are claimed.",
+  "validation_scope": "YAML parsing, provenance-field coverage, internal references, requested framework/alternative coverage and scenario arithmetic; not production Pydantic validation.",
+  "artifacts": {
+    "findings.yaml": {
+      "sha256": "ccb51373c193bb9b8485db471bb35e41b17128455d00514957881e8834a3b97a",
+      "bytes": 163723
+    },
+    "decisions/0001-knowledge-structure.yaml": {
+      "sha256": "ab3ada92961165474ce2c2aee6ae3783b2c5e86e0b3285ff3bb70559a311f8c6",
+      "bytes": 8129
+    },
+    "decisions/manifest.json": {
+      "sha256": "624b2669e207ecb7cd4fad05ab5aab27ec2285c15d29a3f89d34257b99144452",
+      "bytes": 968
+    }
+  }
+}

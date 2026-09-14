@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"@context":{"additionalProperties":true,"title":"@Context","type":"object"},"@graph":{"items":{"additionalProperties":true,"type":"object"},"title":"@Graph","type":"array"}},"required":["@context","@graph"],"title":"LinkedGraph","type":"object"}

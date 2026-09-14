@@ -1,0 +1,105 @@
+schema_version: architecture-decision/1.0
+id: '0005'
+title: Bounded local evaluation in a four-level agent hierarchy
+status: accepted
+date: 2026-09-14
+supersedes: null
+invariants: [1, 2, 3, 4, 5, 6, 7, 8]
+context: >-
+  Phase 4 requires evaluator–optimizer loops at every orchestration level, dynamic
+  dispatch, persistent recovery and specialized judges. A final global score cannot
+  repair unreviewed child content. Context must remain outside the skill graph.
+options:
+  - name: One global evaluator and weighted score
+    pros: [Fewer model calls]
+    cons: [Weak evidence could be averaged away, Child defects remain hidden until the end]
+  - name: Local panels with explicit quorum and mandatory evidence and graph votes
+    pros: [Local feedback and bounded revisions, Auditable reasons, Typed separation of writers and judges]
+    cons: [More calls, Correlated model errors remain possible, Conservative escalation may reduce throughput]
+criteria:
+  - Every level must own its proposal, evaluation, revision and terminal status.
+  - Invalid references, cycles, coverage failures and minute violations cannot be voted away.
+  - An initial proposal plus at most three rewrites is distinct from three total attempts.
+  - Replay requires cached provider responses, not a claim that temperature zero is deterministic.
+decision: >-
+  Use L0 routing plans, L1 domain coordination plans, L2 atomic observable micro-skills,
+  and L3 contextualized unit sequences. Compile each level as a subgraph node and use
+  Send for runtime-sized domain, skill, grade and judge fan-out. Each panel contains
+  five distinct role/rubric agents. Each agent judges one criterion; it only returns
+  Verdict and cannot return replacement content. Roles may share a validator model;
+  distinct agents do not imply statistically independent errors. The optimizer uses
+  a different model. Pass requires at least four of five votes with passed=true and
+  individual score >=0.80, including graph and evidence, and no deterministic hard
+  errors. No score averaging is used. One nonmandatory dissent is retained verbatim;
+  safety-critical or evidentiary issues must still be resolved by applicable hard
+  gates and mandatory reviewers. At revisions 0,1,2,3 evaluate locally; after failure
+  at revision 3 emit needs_human_review, finish that item, and allow other dispatched
+  items to finish. Root and domain optimizers rewrite plans/directives, never approved
+  child content. Changed directives can dispatch fresh approved-child invocations that own their
+  own bounded loops; terminal needs_human_review children are reused as failures and
+  cannot be silently resubmitted by parent revisions. Report invocation paths, logical
+  item keys and all child outcomes. Thus the bound
+  is per invocation, not a promise of only three calls for a whole tree. L3 is
+  dispatched only after the composed L0 graph passes; incomplete graph coverage is
+  reported rather than publishing a partial grade as complete.
+consequences:
+  - >-
+    Taxonomy uses physical-science, life-science and earth-space-science, justified by
+    findings timss.2023_content and ngss.dci. Health maps to life science; environmental
+    content is routed by the underlying disciplinary skill. Engineering practices
+    cross domains rather than becoming an unsupported fourth content domain. This is
+    a routing convention, not a new universal science taxonomy or a licence grant.
+  - >-
+    The sixfold expansion is reported, not a cardinality gate. Cognitive reviewers
+    assess atomic tasks and the explicit rationale for stopping. Minutes, task demand
+    and age judgments are design estimates, not empirically calibrated guarantees.
+  - >-
+    Reducers use sorted conflict-detecting keyed union, with associativity,
+    commutativity and idempotence. Single-writer candidate/revision channels use the
+    default replace reducer. Child outputs contain only keyed outcomes, preventing
+    parent candidate overwrites. Judge outputs contain only revision-keyed verdicts.
+  - >-
+    Evidence reviewers receive actual verified chunk paragraphs and return a claim
+    checklist with substrings and paragraph IDs. Whitespace-only layout differences normalize through
+    reversible offsets to the exact original paragraph span; changed words still fail.
+    Missing checks, fabricated
+    quotes or unsupported claims reject regardless of a positive model score.
+    Curriculum-only sources cannot ground scientific misconception assertions.
+    Semantic entailment remains a model judgment, not a formal proof.
+  - >-
+    Keys local to a micro-skill proposal resolve deterministically before graph
+    validation. External skill prerequisites expand to their child micro-skills at
+    composition. Sparse strongly connected components detect directed cycles;
+    co-requisites are separate and must share a curricular unit. Semantic duplicates
+    and missing pedagogical dependencies are the graph specialist's responsibility.
+  - >-
+    L3 optimizes candidate sequences and validates exact coverage, grade ordering,
+    co-requisites and all minute components <=9600 (or a lower input budget). It is a
+    bounded proposal-and-validation solver, not an optimality or feasibility proof;
+    infeasible/unresolved plans reach human review without changing the graph.
+  - >-
+    SQLite checkpoints isolate executions by input, settings, evidence and prompt
+    identity. Provider requests include prompt version/body, input, schema, model,
+    seed and cache version; responses have verified hashes. Offline cache misses fail
+    explicitly for recovery, never fabricate results or count as a judge rejection.
+    Prompt revision counts include schema-validation failures and are diagnostic,
+    not an externally validated measure of educational effectiveness.
+enforced_by:
+  - tests/unit/test_orchestration.py::test_voting_quorum_mandatory_roles_and_threshold
+  - tests/unit/test_orchestration.py::test_judges_cannot_emit_content_and_coordinators_cannot_emit_micros
+  - tests/unit/test_orchestration.py::test_reducer_is_commutative_idempotent_and_rejects_conflicts
+  - tests/unit/test_orchestration.py::test_graph_cycle_orphan_external_and_duplicate_checks
+  - tests/unit/test_orchestration.py::test_evidence_rejects_irrelevant_or_fabricated_citations
+  - tests/unit/test_orchestration.py::test_curriculum_enforces_budget_coverage_and_preserves_assigned_grade
+  - tests/property/test_agent_reducers.py::test_reducer_permutation_and_partition_invariance
+evidence:
+  findings: findings.yaml
+  claim_ids: [timss.2023_content, ngss.dci]
+  source_url:
+    - https://docs.langchain.com/oss/python/langgraph/use-subgraphs
+    - https://docs.langchain.com/oss/python/langgraph/use-graph-api
+    - https://docs.langchain.com/oss/python/langgraph/persistence
+    - https://pirls.bc.edu/timss2023/frameworks/pdf/T23_Frameworks_Ch2_Science.pdf
+    - https://www.nextgenscience.org/sites/default/files/resource/files/AppendixE-ProgressionswithinNGSS-061617.pdf
+  retrieved_at: 2026-09-14
+implementation_status: Implemented; empirical prompt quality requires a broader educational evaluation set.

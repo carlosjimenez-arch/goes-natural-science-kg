@@ -1,0 +1,1 @@
+{"batch_size":4,"concurrency":16,"coverage_threshold":0.8,"generator_model":"gemini-2.5-flash","judge_model":"gemini-2.5-pro","location":"us-central1","max_revisions":3,"project":"g-edu-lxp-xai-dev-prj-976d","replicates":3,"schema_version":"prompt-experiment/1.0","seed":0,"temperature":0.2,"thinking_budget":128,"variance_limit":0.1}

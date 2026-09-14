@@ -1,0 +1,1 @@
+{"cache_version":"orchestration/1.0","judge_model":"gemini-2.5-pro","location":"us-central1","max_concurrency":4,"optimizer_model":"gemini-2.5-flash","policy":{"max_revisions":3,"minimum_votes":4,"score_threshold":0.8},"project":"g-edu-lxp-xai-dev-prj-976d","schema_version":"orchestration-settings/1.0","seed":0}

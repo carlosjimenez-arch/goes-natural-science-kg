@@ -1,0 +1,42 @@
+schema_version: architecture-decision/1.0
+id: '0004'
+title: Lossless evidence anchors and rebuildable ingestion
+status: accepted
+date: 2026-09-14
+supersedes: null
+invariants: [2, 3, 4, 5, 6, 8]
+context: >-
+  Phase 3 explicitly authorizes live acquisition and real cropped PDF fixtures.
+  Document IDs alone cannot locate evidence. Layout extraction is not PDF byte-offset
+  extraction, and a page break is not a safe curricular boundary.
+options:
+  - name: Token windows
+    pros: [Predictable embedding input size]
+    cons: [Can split objectives and destroy curricular evidence]
+  - name: Reviewed semantic boundaries over a lossless text layer
+    pros: [Exact span reconstruction, Cross-page units, Separate table geometry]
+    cons: [Per-document boundary review, Conservative large sections]
+criteria: [Traceability, No silent truncation, Rebuildability, Honest coverage counts]
+decision: >-
+  Use pdfplumber layout extraction and separate table records. Store the immutable
+  extracted text layer, paragraph bounding boxes and half-open Unicode character
+  offsets. Normalize only through an explicit reversible offset map. A reviewed
+  structural plan supplies curricular boundaries; retain cross-page objectives
+  together and preserve all selected text. Unreviewed segmentation cannot enter the
+  index. Content-address raw PDFs, parsed records and embedding responses. Use
+  Vertex AI with truncation disabled and a local NumPy cosine index. Embed complete
+  paragraphs as internal views and pool their vectors for each intact evidence unit;
+  an oversized paragraph fails explicitly instead of being cut. Expose chunk anchors through a new evidence
+  contract without silently changing historical graph/1.0 fixtures.
+consequences:
+  - Three attributed cropped government PDFs are the explicit exception to ignored corpus files.
+  - Full raw text, vectors and indexes stay ignored; discovery, provenance and coverage manifests are reviewable.
+  - Known URLs with verified cached bytes cause zero HTTP requests; a previously unknown alias requires its first request.
+  - National coverage counts distinct document hashes with reviewed grade applicability; assessment frameworks are additional comparators.
+  - Government-publication admission does not assert an open redistribution licence.
+  - Parser version and reviewed plan are part of evidence identity; changing them deliberately changes affected evidence IDs.
+  - Historical document-only graph references remain legacy; evidence-ready micro-skills require chunk IDs and resolution checks.
+enforced_by:
+  - tests/integration/test_ingestion.py::test_real_pdf_pipeline_and_trace
+  - tests/property/test_chunk_offsets.py::test_lossless_partition_and_offsets
+  - tests/unit/test_fetch.py::test_cache_prevents_second_request

@@ -1,0 +1,29 @@
+schema_version: sequencing-settings/1.0
+budget_hours: 160
+seed: 42
+periods: 4
+tolerance_percent: 0
+knowing_max_percent: 30
+reasoning_min_percent:
+  '2': 30
+  '3': 30
+  '4': 35
+  '5': 40
+  '6': 40
+domain_target_percent:
+  physical-science: 34
+  life-science: 33
+  earth-space-science: 33
+context_max_percent: 60
+context_single_max_percent: 25
+context_min_variety: 3
+retrieval_target: 2
+spacing_minutes: 480
+max_deterministic_time: 1.0
+weights:
+  domain_balance: 2
+  cognitive_balance: 5
+  inquiry: 20
+  spacing: 3
+  thematic_coherence: 1
+  context_variety: 1

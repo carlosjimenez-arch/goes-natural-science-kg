@@ -1,0 +1,32 @@
+{
+  "edges": {
+    "added": [
+      "transfer-new"
+    ],
+    "modified": {
+      "transfer-edit": [
+        "strength"
+      ]
+    },
+    "removed": [
+      "transfer-old"
+    ]
+  },
+  "nodes": {
+    "added": [
+      "new-topic"
+    ],
+    "modified": {
+      "explain-flow": [
+        "estimated_minutes",
+        "grade_band"
+      ],
+      "matter": [
+        "label"
+      ]
+    },
+    "removed": [
+      "old-topic"
+    ]
+  }
+}

@@ -1,0 +1,77 @@
+[
+  {
+    "schema_version": "pdf-fixture-provenance/1.0",
+    "file": "el-salvador-science-2026.pdf",
+    "source_id": "source-el-salvador-science-2026-6bd76a2149959464",
+    "source_url": "https://www.mined.gob.sv/materiales/2026/CIENCIA_Y_TECNOLOGIA/1.%20Programas%20de%20estudio/Programas%20de%20estudio_Ciencia%20y%20Tecnolog%C3%ADa_2.%C2%B0%20a%206.%C2%B0%20grados.pdf",
+    "source_sha256": "8127beee05165a7e5a73c1b33fcdd5a921744354fd330939714660e6a70d6486",
+    "license": "official-publication",
+    "license_evidence": {
+      "document_url": "https://www.mined.gob.sv/materiales/2026/CIENCIA_Y_TECNOLOGIA/1.%20Programas%20de%20estudio/Programas%20de%20estudio_Ciencia%20y%20Tecnolog%C3%ADa_2.%C2%B0%20a%206.%C2%B0%20grados.pdf",
+      "evidence_url": "https://www.mined.gob.sv/ciencia-educativa/",
+      "license": "official-publication",
+      "basis": "official_publication",
+      "statement": "Official-publication admission under rule sv-mined; not an open copyright licence.",
+      "reviewed_by": "allowlist:2026-09-14.1:sv-mined",
+      "reviewed_at": "2026-09-14T00:00:00Z",
+      "verification_method": "allowlist"
+    },
+    "physical_source_pages": [
+      33,
+      34
+    ],
+    "fixture_sha256": "de86bdbdc64051b198054de65be6e60f66e64b2cce9e65eae02f159890d3c2a1",
+    "modification": "Only complete pages retained; metadata added. Original typography and content unchanged.",
+    "retrieved_at": "2026-09-14T00:00:00Z"
+  },
+  {
+    "schema_version": "pdf-fixture-provenance/1.0",
+    "file": "colombia-dba.pdf",
+    "source_id": "source-colombia-dba-92ec0d38e795a639",
+    "source_url": "https://www.colombiaaprende.edu.co/sites/default/files/files_public/2022-06/DBA_C.Naturales-min.pdf",
+    "source_sha256": "3156475f8a0cc988080dc71c49b722f9f125726591adafd66f45a78d5e8a3f4d",
+    "license": "official-publication",
+    "license_evidence": {
+      "document_url": "https://www.colombiaaprende.edu.co/sites/default/files/files_public/2022-06/DBA_C.Naturales-min.pdf",
+      "evidence_url": "https://www.colombiaaprende.edu.co/sites/default/files/files_public/2022-06/DBA_C.Naturales-min.pdf",
+      "license": "official-publication",
+      "basis": "official_publication",
+      "statement": "Official-publication admission under rule co-aprende; not an open copyright licence.",
+      "reviewed_by": "allowlist:2026-09-14.1:co-aprende",
+      "reviewed_at": "2026-09-14T00:00:00Z",
+      "verification_method": "allowlist"
+    },
+    "physical_source_pages": [
+      10,
+      11
+    ],
+    "fixture_sha256": "5316c85db67e12caae5627ddb963e33ccf725a1195d467e434f94adc4707c326",
+    "modification": "Only complete pages retained; metadata added. Original typography and content unchanged.",
+    "retrieved_at": "2026-09-14T00:00:00Z"
+  },
+  {
+    "schema_version": "pdf-fixture-provenance/1.0",
+    "file": "uruguay-biology-tramo-3.pdf",
+    "source_id": "source-uruguay-biology-tramo-3-36271939444c4a8a",
+    "source_url": "https://www.anep.edu.uy/sites/default/files/images/te-programas/2023/finales/espacios/cientifico-matematico/Ciencias%20del%20Ambiente%20(Biolog%C3%ADa)%20-%20Tramo%203.pdf",
+    "source_sha256": "5229188d83c95cfd28a1fb6bb8a902ed58caea3b5565b7412094a68dfb594251",
+    "license": "official-publication",
+    "license_evidence": {
+      "document_url": "https://www.anep.edu.uy/sites/default/files/images/te-programas/2023/finales/espacios/cientifico-matematico/Ciencias%20del%20Ambiente%20(Biolog%C3%ADa)%20-%20Tramo%203.pdf",
+      "evidence_url": "https://anep.edu.uy/documentos-curriculares/ebi/programas-ebi-2023-2023",
+      "license": "official-publication",
+      "basis": "official_publication",
+      "statement": "Official-publication admission under rule uy-anep; not an open copyright licence.",
+      "reviewed_by": "allowlist:2026-09-14.1:uy-anep",
+      "reviewed_at": "2026-09-14T00:00:00Z",
+      "verification_method": "allowlist"
+    },
+    "physical_source_pages": [
+      14,
+      15
+    ],
+    "fixture_sha256": "ff920acb178bcc27bd00101e04ab0eb57e741c7f71dce319bdfd6b6e1df70e6b",
+    "modification": "Only complete pages retained; metadata added. Original typography and content unchanged.",
+    "retrieved_at": "2026-09-14T00:00:00Z"
+  }
+]

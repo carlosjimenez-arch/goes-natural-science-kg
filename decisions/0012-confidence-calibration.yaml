@@ -1,0 +1,109 @@
+schema_version: architecture-decision/1.0
+id: '0012'
+title: Panel-derived, calibratable micro-skill confidence instead of self-reported probability
+status: accepted
+date: '2026-09-14'
+supersedes: null
+invariants:
+- 2
+- 3
+- 4
+- 8
+context: |
+  MicroSkill.confidence (micro-skill/1.0) and MicroProposal.confidence are typed as
+  Probability, but the value is a number the generator model writes about its own output.
+  agents/checks.py::materialize copied it verbatim into EvidenceReadyMicroSkill, so the
+  published graph carried a self-reported figure with no calibration source: nothing tied
+  0.9 to a 90% chance that a human specialist accepts the micro-skill. In the recorded
+  hierarchy under tests/golden/orchestration every micro-skill reports 0.9 regardless of the
+  panel result. Decision 0011 requires calibrated confidence as part of judge validation and
+  lineage; decision 0010 forbids publishing unmeasured quality claims.
+options:
+- name: Panel-derived raw score, recomputed per run, calibrated by isotonic regression on human labels (chosen)
+  pros:
+  - The estimate is a pure function of recorded ballots and an optional calibration record;
+    it changes whenever verdicts, revisions or the calibration change, never by decree.
+  - Isotonic regression (pool adjacent violators) is monotone, non-parametric, deterministic
+    and implemented with NumPy; no learned weights beyond the human-labelled sample.
+  - The source of every value is explicit (self_reported, panel_derived, calibrated) and the
+    self-reported figure is retained for comparison, so the shift is auditable.
+  cons:
+  - Until at least 30 human-reviewed samples with both outcomes exist, values remain
+    uncalibrated panel scores and are labelled as such.
+  - Micro-skills inherit item-level panel signals; the panel does not vote per micro-skill.
+- name: Keep the self-reported probability
+  pros:
+  - No change.
+  cons:
+  - Unfalsifiable; verbalized model confidence is known to be over-confident and
+    prompt-sensitive; it would enter lineage as if it were a measurement.
+- name: Replace confidence with the raw judge mean only
+  pros:
+  - Simple.
+  cons:
+  - Still a score, not a probability; ignores hard errors, revisions and evidence support;
+    no path to calibration.
+- name: Platt scaling (logistic) instead of isotonic
+  pros:
+  - Smooth output from few samples.
+  cons:
+  - Assumes a sigmoid relation between raw score and acceptance; the raw score is a bounded
+    mean of heterogeneous signals, so the shape is unknown. Isotonic only assumes monotonicity.
+criteria:
+- Every published confidence value states its source and calibration id.
+- The mapping from raw score to probability is monotone and fitted only on human labels.
+- Insufficient or single-class calibration data fails explicitly (exit 2), never silently.
+- Recomputation is deterministic and covered by property, unit and benchmark tests.
+decision: |
+  Add schemas/calibration.py with ConfidenceComponents, ConfidenceEstimate,
+  CalibrationSample, CalibrationBlock, CalibrationRecord and ConfidenceReport, and
+  eval/calibration.py with the pure functions. Raw score policy, declared here: if the final
+  ballot has hard errors the raw score is 0; otherwise it is the equal-weight mean of the
+  available signals vote_fraction, mean_judge_score, supported_claim_fraction and
+  1 - revisions/3. The self-reported value is excluded from the raw score and kept in the
+  components for comparison. Without a calibration record the estimate is published as
+  panel_derived with calibrated=false. With a record fitted by isotonic regression on
+  CalibrationSample rows (raw score, human accepted) the estimate is calibrated and cites
+  the record id; the record reports sample size, positives, Brier score and expected
+  calibration error. Items without any ballot fall back to self_reported and say so.
+  agents/runner.py::write_report writes confidence.json beside report.json under the same
+  manifest on every orchestration run; the CLI exposes confidence-fit and
+  confidence-estimate. The frozen micro-skill/1.0 and micro-skill/2.0 contracts are not
+  changed; the estimate lives in a separate artifact keyed by stable id, which decision 0010
+  designates as the lineage export location.
+consequences:
+- Self-reported confidence remains in the graph payload for historical compatibility but
+  is documented as a generator statement, not an estimate; consumers read confidence.json.
+- The raw-score weights are policy, not fitted; calibration is what turns them into a
+  probability. A superseding decision is required to change the weights.
+- Calibration samples must come from human reviewers who did not see the raw score; the
+  CalibrationSample contract records the reviewer role and time.
+- Because the panel votes per item, micro-skills of one item share components; per-micro
+  differences only appear through calibration of distinct items or a future per-micro vote.
+- A micro-skill is carried by its L2 item and again by the L1 and L3 items above it; the
+  estimate is taken from the L2 item that judged it (preference L2, L3, L1, L0), so each
+  entity appears once in confidence.json.
+- execution_sha256 in orchestration reports hashes the package source, so this change
+  regenerated tests/golden/orchestration/report.json from the recorded cassettes offline;
+  every ballot, verdict and micro-skill in it is byte-identical to the previous version.
+- Expected calibration error uses ten equal-width bins and is sensitive to sample size;
+  report it with the sample size, never alone.
+enforced_by:
+- tests/unit/test_confidence.py::test_panel_confidence_replaces_self_report_on_recorded_hierarchy
+- tests/unit/test_confidence.py::test_hard_errors_dominate_and_missing_panel_falls_back_to_self_report
+- tests/unit/test_confidence.py::test_isotonic_fit_is_monotone_and_reports_calibration_quality
+- tests/unit/test_confidence.py::test_calibration_rejects_small_or_single_class_samples
+- tests/unit/test_confidence.py::test_calibrated_estimates_record_their_calibration_id
+- tests/unit/test_confidence.py::test_cli_fit_and_estimate_write_one_manifest
+- tests/property/test_calibration.py::test_isotonic_calibration_is_monotone_bounded_and_permutation_invariant
+- tests/benchmarks/test_calibration_benchmarks.py::test_fit_isotonic_5000_samples
+- tests/benchmarks/test_calibration_benchmarks.py::test_apply_calibration_50000_scores
+profile_tradeoffs:
+  curriculum_designer: A confidence figure shown to a ministry reviewer must mean "how often
+    specialists accepted items like this"; anything else misleads the review.
+  graph_theory_researcher: Monotone calibration preserves the ranking induced by the panel
+    while correcting its scale; it cannot repair a ranking that is wrong.
+  ai_software_engineer: Verbalized confidence is an uncalibrated model output; treating it
+    as a probability would be an untested claim in a lineage artifact.
+implementation_status: Implemented in this turn; no calibration record exists yet because no
+  human-reviewed samples exist, so all current estimates are panel_derived.

@@ -1,0 +1,60 @@
+{
+  "artifacts": {
+    "0001-knowledge-structure.yaml": {
+      "bytes": 8129,
+      "sha256": "ab3ada92961165474ce2c2aee6ae3783b2c5e86e0b3285ff3bb70559a311f8c6"
+    },
+    "0002-repository-contracts.yaml": {
+      "bytes": 4316,
+      "sha256": "d552321610708c528637b769dc3e3cddd01a91f89776726c5ce9db283e4ff3b5"
+    },
+    "0003-source-license-gate.yaml": {
+      "bytes": 3849,
+      "sha256": "734720c9d07c45841cee4e0ef9495b032413d5101d80f238378946428e5c808c"
+    },
+    "0004-traceable-ingestion.yaml": {
+      "bytes": 2787,
+      "sha256": "a4928f3e798cccc2a9b9d5b19a93056675b440a9fb4ccf2c9101d38b1a0c550b"
+    },
+    "0005-local-agent-evaluation.yaml": {
+      "bytes": 7140,
+      "sha256": "88df4e0fec1e68ae6c89d87c67fa3776a3bcd0e288de275b28cc63f47f8ef035"
+    },
+    "0006-prompt-experiments.yaml": {
+      "bytes": 4213,
+      "sha256": "2a261e3be2d72c7e0b0d9459cba902e25399d2be4ea482ecd2233643f99b85a3"
+    },
+    "0007-prompt-selection.yaml": {
+      "bytes": 2098,
+      "sha256": "9548993046dc14dc14c940ad52ce1c04f5455f8abe5b38def78e16ef35fba9fa"
+    },
+    "0008-constraint-curriculum.yaml": {
+      "bytes": 7145,
+      "sha256": "3e1f2e1b328fac6baa91be23a7fb997687d98f3387940fd5690bd24f255adbfd"
+    },
+    "0010-system-design.yaml": {
+      "bytes": 20994,
+      "sha256": "fe1b31b06bd2d12b31ebb41b2ee479333ec2005e8a76dda3c0f494a422c46ab4"
+    },
+    "0011-evaluation-design.yaml": {
+      "bytes": 13969,
+      "sha256": "07bffe28515e7dec659c38aa0880500c18e75b6eafd11da952337a095de2186a"
+    },
+    "0012-confidence-calibration.yaml": {
+      "bytes": 7092,
+      "sha256": "e77249123246bc10489ac27406597ae48edacf40adac9da348663ca07bcc3d7b"
+    }
+  },
+  "generated_at": "2026-09-14T05:24:47.271353Z",
+  "git_dirty": null,
+  "git_sha": null,
+  "inputs": {
+    "CLAUDE.md": "7ff4c3b47048b872ad18d28e6f2d021cdf71e5599a6b92611bc317e73adacb4e",
+    "pyproject.toml": "2081c4ba20d5e8bdc50e30cd98bfb0b21977cac92d4bedaf8a77bd2378ec9920",
+    "uv.lock": "8d9ad56bb70ac25eed88f91b2f12848fc1ead9a275cdff100c33b2ae157cfc32"
+  },
+  "notes": "Research and implemented architecture decisions through Phase 6, proposed system and evaluation design (0010, 0011) and confidence calibration (0012).",
+  "schema_version": "artifact-manifest/1.0",
+  "seed": 0,
+  "settings_hash": "6e6558284e4205e98114b25e0e3305ee9c4ec4d52c78ab3acc3cc30f2f9a2cfe"
+}

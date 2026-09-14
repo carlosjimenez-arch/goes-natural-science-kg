@@ -1,0 +1,53 @@
+schema_version: architecture-decision/1.0
+id: '0003'
+title: Make source admission an executable, auditable workflow gate
+status: accepted
+date: '2026-09-14'
+supersedes: null
+invariants: [2, 3, 5, 6, 7, 8]
+context: >-
+  The maintainer requires a domain allowlist, an explicit open/official review route,
+  and rejection records that do not interrupt the pipeline. Sibling license_checker
+  modules contain broad domain defaults and, in linguistics, a catalog hint can
+  produce acceptance. We do not treat such hints as verified document rights.
+options:
+  - name: Infer open rights from all listed institutions
+    pros: [Fewer review inputs]
+    cons: [Conflates official publication with open licensing and ignores document-level restrictions]
+  - name: Scoped official rules plus explicit document-bound review
+    pros: [Auditable admission basis, Unknown rights are preserved, Rejections remain in the manifest]
+    cons: [Some listed publishers require per-document review before ingestion]
+criteria:
+  - Preserve actual licence evidence
+  - Do not grant rights by substring or unverified catalog hint
+  - Record rejection and continue the valid batch
+  - Reconstruct corpus provenance from manifests
+decision: >-
+  Use one enum and one packaged allowlist. Automatically admit only matching official
+  publication rules scoped by hostname, path, country and document type. Treat
+  official-publication as a policy admission basis, not a Creative Commons licence.
+  Other listed institutions and shared CDNs require an explicit document-bound
+  open/official attestation with reviewer and time. Restrictions override domain
+  defaults. The LangGraph license_gate node emits every verdict, record_manifest
+  persists both accepted and rejected records, and only accepted IDs are exposed as
+  ingestion-ready. No fetch occurs in Phase 2.
+consequences:
+  - Unknown, missing, inconsistent or restricted licence evidence produces a rejected record with a reason.
+  - Explicit review is a trusted ingestion input; no regex, LLM classification or arbitrary title substitutes for it.
+  - Rerunning with a changed allowlist rechecks old domain-based acceptance instead of trusting its stale attestation.
+  - Rejected previously downloaded records may retain hashes for audit; rejection never makes those bytes ingestion-ready.
+  - The JSONL manifest is a deterministic current snapshot merged by ID, not an append-only event log; version snapshots for history.
+  - Manifest replacement is atomic for a single writer; concurrent multi-process writers require external coordination in a later phase.
+  - Before a future fetch follows a redirect, it must recheck the effective URL and publisher evidence; this gate does not perform HTTP requests.
+  - Admissions do not imply source grounding eligibility, permission to redistribute third-party material or an open licence for every PNLD or CONALITEG textbook.
+  - The corpus is rebuilt from accepted fetched manifest records and verified hashes; pending downloads cannot support a byte-identical rebuild yet.
+enforced_by:
+  - tests/unit/test_license_gate.py::test_official_and_unknown_and_explicit_open
+  - tests/unit/test_license_gate.py::test_domain_spoofing
+  - tests/unit/test_license_gate.py::test_restrictions_override_official_domain
+  - tests/unit/test_license_gate.py::test_claiming_cc_without_evidence_fails
+  - tests/unit/test_license_gate.py::test_review_timestamp_and_document_binding
+  - tests/unit/test_license_gate.py::test_revoked_policy_does_not_reuse_domain_attestation
+  - tests/integration/test_workflow.py::test_rejection_is_recorded_and_batch_continues
+  - tests/integration/test_workflow.py::test_corrupt_manifest_is_not_silently_discarded
+implementation_status: Implemented deterministic LangGraph gate and manifest persistence; fetch/parse/chunk/index remain reserved boundaries.

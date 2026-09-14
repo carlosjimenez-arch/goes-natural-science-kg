@@ -1,0 +1,210 @@
+schema_version: architecture-decision/1.0
+id: '0011'
+title: Evaluation before construction with baselines, slices, judge validation and drift canaries
+status: proposed
+date: '2026-09-14'
+supersedes: null
+invariants:
+- 1
+- 3
+- 4
+- 6
+- 8
+context: |
+  Decision 0010 binds the ML-system framework to this batch pipeline and orders evaluation
+  first. This decision fixes the metrics, slices, baselines, thresholds, judge validation,
+  behavioural tests, drift artifacts and the human-in-the-loop protocol. Current state
+  (2026-09-14): eval/metrics.py computes coverage, prerequisite precision/recall, invalid
+  reference rate, unsupported claim rate and judge_correct against synthetic negatives;
+  reporting groups by role and technique only; the 46 reference cases are agent-authored;
+  no baseline, slice, human agreement or canary exists. Decision 0005 fixed the judge panel
+  (five roles, four of five votes, score >= 0.80, three revisions) without validating the
+  judges against humans; decision 0007 selected prompt variants provisionally.
+options:
+- name: Reference set with human labels, slices, baselines and judge validation (chosen)
+  pros:
+  - Produces the comparison table the architecture must survive and exposes the worst slice.
+  - Reuses the existing harness, cells and observation contracts.
+  cons:
+  - Requires expert annotator time before any new pipeline work.
+- name: Keep aggregate agent-authored evaluation and add baselines only
+  pros:
+  - Cheap.
+  cons:
+  - Judges remain unvalidated; an aggregate score hides grade-level failure; the reference
+    inherits the generator's biases.
+- name: Replace judges with human review of every item
+  pros:
+  - Maximum validity.
+  cons:
+  - Does not scale to full graphs; the judges exist to triage, and triage quality is exactly
+    what must be measured.
+criteria:
+- Every metric is computed per slice and the report shows the worst slice before any mean.
+- The full system S is compared against B0, B1 and B2 on identical cases and slices.
+- Judge agreement with humans uses a statistic appropriate to the label scale, with sample
+  sizes and confidence intervals reported.
+- Thresholds are declared before the measurements that they gate are inspected.
+- No artifact regenerates under a new model or prompt version without a passing canary.
+decision: |
+  METRICS (all reported per slice; validity gates are prerequisites, not quality)
+  Validity gates: schema_valid, resolvable_citation_rate, acyclic, grade_monotone,
+  budget_feasible. Failure of any gate marks the item invalid and excludes it from quality
+  averages; the invalid count is reported per slice.
+  Quality against the human reference: coverage (bipartite match, existing),
+  prerequisite_precision and prerequisite_recall (existing), grade_placement_agreement
+  (exact and within one grade), atomicity_rate (one observable verb and one knowledge
+  object, judged by humans on a sample), misconception_relevance (human sample),
+  unsupported_claim_rate (existing; measures traceability, not entailment).
+  Context assembly: retrieval_recall_at_k against human-anchored evidence, cited_fraction of
+  injected chunks, context_tokens.
+  Operational: needs_human_review_fraction, revisions_mean, estimated_usd per accepted item,
+  provider_error_rate, cache_hit_ratio.
+  Reliability: two full runs with identical SystemVersion and seed produce byte-identical
+  data/graph and runs manifests.
+
+  SLICES (minimum; every table carries them)
+  grade in {2,3,4,5,6}; content domain in {physical-science, life-science,
+  earth-space-science}; cognitive_domain in {knowing, applying, reasoning}; capability tier
+  where a level applies (L2 decomposition vs L3 curricularization; generator model tier).
+  The report emits worst_slice per metric, the gap between worst slice and aggregate, and a
+  flag when any slice has fewer than 15 cases (insufficient to interpret). Slice minimums for
+  the reference set: at least 15 evaluation cases per grade and per domain, so the current
+  40 evaluation cases must grow to at least 75 before the table is treated as evidence.
+
+  BASELINES (same reference set, same slices, same validity gates)
+  B0 official curriculum: map current MINED indicators to reference micro-skills; report
+  coverage and granularity (indicators per grade, implied minutes per indicator). B0 has no
+  prerequisite edges, so prerequisite recall is 0 by construction and is still reported.
+  B1 single call: one prompt per input skill with the same evidence packet, no judges, no
+  revision, generator model identical to S.
+  B2 single call plus one generic judge: B1 followed by one judge prompt with a single
+  generic rubric and one accept/revise cycle.
+  S full system: hierarchy with the five-role panel and bounded revisions.
+  Decision rule, declared before measurement: S is justified only if, on every grade slice,
+  S improves prerequisite_recall or coverage over B1 by at least 0.10 absolute with a
+  bootstrap 95% interval excluding zero, and its unsupported_claim_rate is not worse. If S
+  ties with B1 on any grade slice, the report states it in the first line and the hierarchy
+  for that slice is a maintenance cost without measured benefit.
+  Cost is reported per accepted item so that the improvement is priced.
+
+  JUDGE VALIDATION
+  Sample at least 50 items per judge role stratified by grade and by predicted verdict, with
+  at least 15 predicted rejections per role, so that agreement is not inflated by a high pass
+  rate. Human raters label each item with the judge's own criterion on a four-point ordinal
+  scale plus a binary pass.
+  Statistics, chosen by scale: binary judge pass vs binary human pass -> Cohen's kappa with a
+  bootstrap interval, plus sensitivity and specificity because kappa is prevalence-sensitive;
+  judge score vs ordinal human rating -> quadratic-weighted kappa, with Spearman rho as a
+  secondary check; agreement among the five judges and among multiple human raters ->
+  Krippendorff's alpha (interval for scores, nominal for pass), which handles more than two
+  raters and missing ratings.
+  Thresholds: a judge stays active only with kappa >= 0.60 against humans (lower bound of
+  the interval >= 0.40); below that it is disabled or rewritten and the report records the
+  disabled role and the panel size. Two judges with pairwise alpha >= 0.90 and correlated
+  errors on the same human-labelled items are treated as one vote; the panel rule of four of
+  five is recomputed on the effective panel size and documented.
+  Bias probes with controlled perturbations: length (same content padded by 40% versus
+  compressed), self-preference (generator output versus human-authored equivalent), position
+  (swap order in any pairwise comparison), and rationale echo (rationale that repeats the
+  rubric wording without evidence). A judge whose pass rate shifts by more than 0.10 under a
+  content-preserving perturbation fails the probe.
+
+  BEHAVIOURAL TESTS
+  Invariance: paraphrase the input skill (human-written paraphrases, not generated by the
+  system); the bipartite match between the two decompositions must cover at least 0.80 and
+  the prerequisite edge set Jaccard must be at least 0.70.
+  Directional expectation: raising suggested_grade by one must not lower the cognitive
+  domain distribution in stochastic order; raising by two must raise the reasoning share.
+  Consistency: identical input, seed and SystemVersion produce identical outputs, verified on
+  two full runs, not only on cache keys.
+  Robustness: malformed, contradictory or empty-evidence inputs must yield a typed rejection
+  (needs_human_review or invalid) with confidence unreported; any decomposition with
+  confidence >= 0.8 for such inputs is a test failure.
+
+  DRIFT
+  D1 baseline drift: data/baselines/official/<cutoff>/ holds the official skill map with
+  cut-off date, source digests and a machine diff against the previous cut-off using the
+  existing GraphDiff family; every run records the baseline cut-off it used.
+  D2 corpus drift: CorpusComposition per run counts documents and chunks by country,
+  publication year, document type and provenance; a run alerts when any country or type
+  share moves more than 10 percentage points from the previous accepted run, or when
+  El Salvador national documents fall below the coverage target.
+  D3 model drift: data/reference/canary/ is a frozen subset of at least 25 human-reviewed
+  cases stratified by grade; it re-runs on any change of generator, judge or embedding model
+  identifier or provider model_version, or of any prompt version. Acceptance: no validity
+  gate regression, coverage and prerequisite_recall within 0.05 of the last accepted canary,
+  judge kappa on the canary within 0.10. Production artifacts regenerate only from a
+  SystemVersion whose canary passed; provider model_version is recorded on every ItemOutcome
+  and exported in EntityLineage for every node and edge.
+
+  HUMAN IN THE LOOP
+  Annotators: two curriculum specialists per case, independent and blind to system output,
+  drawn from the ministry science team or contracted experts, identified by role in
+  annotations. Disagreements are adjudicated by a third specialist; both original labels and
+  the adjudication are stored; inter-annotator kappa is reported per slice and bounds the
+  ceiling for any system score. Agent-authored cases remain labelled as such and are used
+  only as a smoke set.
+  Review surface: a generated HTML page per input skill showing the skill text, the cited
+  evidence excerpts with page anchors, the proposed micro-skills as a short list with a
+  small prerequisite graph, grade placement, minutes, each judge verdict summarized in one
+  line, and accept/edit/reject controls with reason codes per micro-skill and per edge. No
+  raw JSON is shown.
+  Feedback paths, separate and traceable: (a) output correction becomes a HumanOverride
+  record with reviewer role, reason code and target stable id; it is applied at publication,
+  appears in EntityLineage, and the corrected item is stored under data/reference/regression
+  because it was produced while viewing system output; (b) a systematic pattern of
+  corrections motivates a prompt revision, which is a new prompt version and a new
+  SystemVersion that must pass the canary and the full slice table before promotion.
+  Readiness: the system is not ready for institutional review while needs_human_review
+  exceeds 0.10 of L2 items overall or 0.20 on any grade slice, or while any active judge
+  lacks a passing kappa. These are declared thresholds, not measured optima.
+consequences:
+- The first deliverable is a table, not a pipeline change - the baseline comparison per slice
+  with cost per accepted item and the worst slice on the first line.
+- The five-role panel of decision 0005 becomes conditional on judge validation; disabled or
+  merged roles change the voting rule and must be recorded in a superseding decision.
+- Decision 0007 provisional prompt selections are re-evaluated on the human-annotated
+  reference set with slices before any production promotion.
+- Reference set growth, annotator time and canary runs are recurring costs and are reported
+  in each RunManifest.
+- Thresholds here (0.10 improvement, kappa 0.60, canary tolerance 0.05, needs_human_review
+  0.10/0.20, 15 cases per slice) are declared policy for gating; they are not empirically
+  optimal and may be revised only by a superseding decision written before new measurements
+  are inspected.
+enforced_by: []
+profile_tradeoffs:
+  curriculum_designer: Human specialists define what a correct decomposition and a correct
+    prerequisite are; the system score cannot exceed inter-annotator agreement, and the
+    review surface must be readable by teachers, not engineers.
+  graph_theory_researcher: Structural metrics are exact and cheap but never establish
+    pedagogical truth; prerequisite precision and recall against a human reference graph
+    are the quality signal, and Jaccard on edge sets is the invariance signal.
+  ai_software_engineer: Judges are models and must be validated like any classifier;
+    baselines price the hierarchy; the canary is the only guard against silent provider
+    model changes.
+contract_changes_proposed_not_applied:
+- location: src/goes_natural_science_kg/schemas/evaluation.py (new)
+  change: SliceKey, SliceMetrics with worst_slice and insufficient flag, BaselineRow for B0,
+    B1, B2 and S, JudgeAgreement (statistic, estimate, interval, n, active), BiasProbe,
+    BehaviouralResult, CanaryResult, CorpusComposition, HumanOverride, AnnotationRecord.
+- location: src/goes_natural_science_kg/eval/reporting.py
+  change: Group by slice keys in addition to role and technique; emit worst slice first.
+- location: prompts/baselines/ (new)
+  change: Spanish single-call prompt (B1) and generic judge prompt (B2) versioned like other
+    prompt artifacts.
+future_acceptance_checks:
+- tests/unit/test_slices.py::test_report_lists_worst_slice_before_aggregate
+- tests/unit/test_slices.py::test_small_slices_are_flagged_insufficient
+- tests/integration/test_baselines.py::test_b0_b1_b2_and_s_share_cases_and_slices
+- tests/unit/test_judge_agreement.py::test_kappa_and_alpha_match_reference_implementation
+- tests/unit/test_judge_agreement.py::test_failing_judge_is_disabled_and_reported
+- tests/unit/test_bias_probes.py::test_length_and_position_perturbations_are_content_preserving
+- tests/property/test_behavioural.py::test_paraphrase_invariance_bounds
+- tests/property/test_behavioural.py::test_grade_increase_is_monotone_in_reasoning_share
+- tests/unit/test_robustness.py::test_malformed_input_yields_typed_rejection
+- tests/unit/test_drift.py::test_corpus_composition_alert_threshold
+- tests/integration/test_canary.py::test_canary_gates_regeneration
+- tests/unit/test_human_loop.py::test_override_and_prompt_revision_paths_are_distinct
+implementation_status: Proposed design only; no harness, contract or artifact change applied
+  in this turn.

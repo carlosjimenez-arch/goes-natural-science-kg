@@ -1,0 +1,54 @@
+[
+  {
+    "country": "SV",
+    "grades": [
+      3,
+      4
+    ],
+    "id": "source-official-book-969677b339792c18",
+    "identity": {
+      "key": "official-book",
+      "namespace": "fixture"
+    },
+    "title": "Synthetic official-path fixture",
+    "type": "textbook",
+    "url": "https://www.mined.gob.sv/materiales/fixture-book.pdf"
+  },
+  {
+    "country": "SV",
+    "grades": [
+      3
+    ],
+    "id": "source-unknown-book-b9478a4c9b5623fc",
+    "identity": {
+      "key": "unknown-book",
+      "namespace": "fixture"
+    },
+    "title": "Unknown rights fixture",
+    "type": "textbook",
+    "url": "https://example.org/unknown"
+  },
+  {
+    "country": "SV",
+    "grades": [
+      3
+    ],
+    "id": "source-open-book-474ea01f2a571362",
+    "identity": {
+      "key": "open-book",
+      "namespace": "fixture"
+    },
+    "license_evidence": {
+      "basis": "open_license",
+      "document_url": "https://example.org/open-book",
+      "evidence_url": "https://example.org/rights",
+      "license": "CC-BY-4.0",
+      "reviewed_at": "2026-09-13T00:00:00Z",
+      "reviewed_by": "fixture-reviewer",
+      "statement": "Handcrafted test-only licence attestation. No real external publication is asserted."
+    },
+    "title": "Reviewed open fixture",
+    "type": "textbook",
+    "url": "https://example.org/open-book"
+  }
+]

@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"location":{"default":"us-central1","minLength":1,"title":"Location","type":"string"},"project_id":{"anyOf":[{"minLength":1,"type":"string"},{"type":"null"}],"default":null,"title":"Project Id"}},"title":"GCPSettings","type":"object"}

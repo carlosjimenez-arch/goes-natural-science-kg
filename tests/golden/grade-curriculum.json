@@ -1,0 +1,34 @@
+{
+  "grade": 3,
+  "id": "grade-year-three-c91407997c7f2442",
+  "identity": {
+    "key": "year-three",
+    "namespace": "fixture"
+  },
+  "total_minutes": 50,
+  "units": [
+    {
+      "assessment_minutes": 10,
+      "contexts": [
+        {
+          "domain": "environmental",
+          "type": "everyday"
+        }
+      ],
+      "id": "unit-water-investigation-198e02b9ec6b853e",
+      "identity": {
+        "key": "water-investigation",
+        "namespace": "fixture"
+      },
+      "instruction_minutes": 20,
+      "label": "Water investigation",
+      "micro_skill_ids": [
+        "micro-observe-flow-0fb95d7d2298d945",
+        "micro-explain-flow-90aea0716b1907e9"
+      ],
+      "review_minutes": 10,
+      "setup_minutes": 10,
+      "total_minutes": 50
+    }
+  ]
+}

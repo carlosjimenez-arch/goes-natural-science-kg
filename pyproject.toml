@@ -1,0 +1,75 @@
+[build-system]
+requires = ["hatchling==1.32.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "goes-natural-science-kg"
+version = "0.1.0"
+description = "Auditable natural-science curriculum contracts for El Salvador, grades 2–6."
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+license = "Apache-2.0"
+dependencies = [
+  "pydantic==2.13.5",
+  "pydantic-settings==2.15.0",
+  "typer==0.27.2",
+  "PyYAML==6.0.3",
+  "langgraph==1.2.11",
+  "pdfplumber==0.11.10",
+  "pypdf==6.18.1",
+  "numpy==2.5.3",
+  "httpx==0.28.1",
+  "google-auth==2.58.0",
+  "requests==2.34.2",
+  "langgraph-checkpoint-sqlite==3.1.1",
+  "google-genai==2.23.0",
+  "scipy==1.18.1",
+  "ortools==9.15.6755",
+]
+
+[project.scripts]
+goes-science = "goes_natural_science_kg.cli:app"
+
+[dependency-groups]
+dev = [
+  "pytest==9.1.1", "pytest-cov==7.1.0", "hypothesis==6.168.0",
+  "pytest-benchmark==5.3.0", "pytest-socket==0.8.1",
+  "ruff==0.16.7", "mypy==2.3.1", "types-PyYAML==6.0.12.20260906",
+  "bandit==1.9.4", "pip-audit==2.10.1", "pre-commit==4.6.2",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/goes_natural_science_kg"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --import-mode=importlib --disable-socket --allow-unix-socket"
+markers = ["benchmark: deterministic in-memory performance cases"]
+
+[tool.coverage.run]
+source = ["goes_natural_science_kg"]
+branch = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "TID", "B", "SIM", "RUF", "C901"]
+ignore = ["E501", "RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+files = ["src/goes_natural_science_kg"]
+plugins = ["pydantic.mypy"]
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv"]
+
+[tool.uv]
+required-version = "==0.12.13"

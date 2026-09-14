@@ -1,0 +1,422 @@
+schema_version: source-allowlist/1.0
+policy_version: 2026-09-14.1
+domains:
+- id: sv-mined
+  publisher: MINED
+  country: SV
+  domain: mined.gob.sv
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - curriculum
+  - textbook
+  - teaching_resource
+  license: official-publication
+  admission: official_publication
+  evidence_url: https://www.mined.gob.sv/ciencia-educativa/
+  retrieved_at: '2026-09-14'
+  notes: Official-publication admission policy, not a blanket open copyright licence.
+    Explicit restrictions override this entry.
+- id: mx-conaliteg
+  publisher: CONALITEG
+  country: MX
+  domain: conaliteg.sep.gob.mx
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - curriculum
+  - textbook
+  - teaching_resource
+  license: unknown
+  admission: explicit_review
+  evidence_url: https://www.conaliteg.sep.gob.mx/
+  retrieved_at: '2026-09-14'
+  notes: Official textbook catalogue requested by maintainer; document-level rights
+    review required before ingestion.
+- id: mx-sep
+  publisher: SEP
+  country: MX
+  domain: educacionbasica.sep.gob.mx
+  include_subdomains: true
+  path_prefixes:
+  - /wp-content/uploads
+  document_types:
+  - curriculum
+  - textbook
+  - teaching_resource
+  license: official-publication
+  admission: official_publication
+  evidence_url: https://educacionbasica.sep.gob.mx/
+  retrieved_at: '2026-09-14'
+  notes: Official-publication admission policy, not a blanket open copyright licence.
+    Explicit restrictions override this entry.
+- id: cl-curriculum
+  publisher: MINEDUC Curriculum Nacional
+  country: CL
+  domain: curriculumnacional.cl
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - curriculum
+  - textbook
+  - teaching_resource
+  license: official-publication
+  admission: official_publication
+  evidence_url: https://www.curriculumnacional.cl/curriculum/1o-6o-basico/ciencias-naturales
+  retrieved_at: '2026-09-14'
+  notes: Official-publication admission policy, not a blanket open copyright licence.
+    Explicit restrictions override this entry.
+- id: cl-mineduc
+  publisher: MINEDUC
+  country: CL
+  domain: mineduc.cl
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - curriculum
+  - textbook
+  - teaching_resource
+  license: unknown
+  admission: explicit_review
+  evidence_url: https://www.mineduc.cl/
+  retrieved_at: '2026-09-14'
+  notes: Licences vary by document. A trusted explicit open/official review is required;
+    no blanket Creative Commons attribution.
+- id: uy-anep
+  publisher: ANEP
+  country: UY
+  domain: anep.edu.uy
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - curriculum
+  - textbook
+  - teaching_resource
+  license: official-publication
+  admission: official_publication
+  evidence_url: https://anep.edu.uy/documentos-curriculares/ebi/programas-ebi-2023-2023
+  retrieved_at: '2026-09-14'
+  notes: Official-publication admission policy, not a blanket open copyright licence.
+    Explicit restrictions override this entry.
+- id: uy-ceibal
+  publisher: Plan Ceibal
+  country: UY
+  domain: ceibal.edu.uy
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - curriculum
+  - textbook
+  - teaching_resource
+  license: unknown
+  admission: explicit_review
+  evidence_url: https://ceibal.edu.uy/
+  retrieved_at: '2026-09-14'
+  notes: Licences vary by document. A trusted explicit open/official review is required;
+    no blanket Creative Commons attribution.
+- id: co-men
+  publisher: MEN
+  country: CO
+  domain: mineducacion.gov.co
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - curriculum
+  - textbook
+  - teaching_resource
+  license: official-publication
+  admission: official_publication
+  evidence_url: https://www.mineducacion.gov.co/1621/articles-81033_archivo_pdf.pdf
+  retrieved_at: '2026-09-14'
+  notes: Official-publication admission policy, not a blanket open copyright licence.
+    Explicit restrictions override this entry.
+- id: co-aprende
+  publisher: MEN Colombia Aprende
+  country: CO
+  domain: colombiaaprende.edu.co
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - curriculum
+  - textbook
+  - teaching_resource
+  license: official-publication
+  admission: official_publication
+  evidence_url: https://www.colombiaaprende.edu.co/sites/default/files/files_public/2022-06/DBA_C.Naturales-min.pdf
+  retrieved_at: '2026-09-14'
+  notes: Official-publication admission policy, not a blanket open copyright licence.
+    Explicit restrictions override this entry.
+- id: br-bncc
+  publisher: MEC BNCC
+  country: BR
+  domain: basenacionalcomum.mec.gov.br
+  include_subdomains: true
+  path_prefixes:
+  - /images
+  document_types:
+  - curriculum
+  - textbook
+  - teaching_resource
+  license: official-publication
+  admission: official_publication
+  evidence_url: https://basenacionalcomum.mec.gov.br/images/BNCC_EI_EF_110518_versaofinal_site.pdf
+  retrieved_at: '2026-09-14'
+  notes: Official-publication admission policy, not a blanket open copyright licence.
+    Explicit restrictions override this entry.
+- id: br-pnld
+  publisher: FNDE PNLD
+  country: BR
+  domain: www.gov.br
+  include_subdomains: false
+  path_prefixes:
+  - /fnde
+  document_types:
+  - curriculum
+  - textbook
+  - teaching_resource
+  license: unknown
+  admission: explicit_review
+  evidence_url: https://www.gov.br/fnde/pt-br/acesso-a-informacao/acoes-e-programas/programas/programas-do-livro
+  retrieved_at: '2026-09-14'
+  notes: PNLD selection does not establish an open licence for each publisher textbook.
+    Explicit per-document review required.
+- id: br-fnde
+  publisher: FNDE PNLD legacy
+  country: BR
+  domain: fnde.gov.br
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - curriculum
+  - textbook
+  - teaching_resource
+  license: unknown
+  admission: explicit_review
+  evidence_url: https://www.fnde.gov.br/
+  retrieved_at: '2026-09-14'
+  notes: Licences vary by document. A trusted explicit open/official review is required;
+    no blanket Creative Commons attribution.
+- id: es-boe
+  publisher: BOE national curriculum
+  country: ES
+  domain: boe.es
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - curriculum
+  license: official-publication
+  admission: official_publication
+  evidence_url: https://www.boe.es/buscar/act.php?id=BOE-A-2022-3296
+  retrieved_at: '2026-09-14'
+  notes: Official-publication admission policy, not a blanket open copyright licence.
+    Explicit restrictions override this entry.
+- id: es-andalusia
+  publisher: Autonomous-community curriculum authority
+  country: ES
+  domain: juntadeandalucia.es
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - curriculum
+  - teaching_resource
+  license: unknown
+  admission: explicit_review
+  evidence_url: https://juntadeandalucia.es/
+  retrieved_at: '2026-09-14'
+  notes: Regional discovery entry; authority and rights need explicit document-level
+    verification. Other regions may enter through the same explicit-review route without
+    a wildcard over Spanish domains.
+- id: es-catalonia
+  publisher: Autonomous-community curriculum authority
+  country: ES
+  domain: gencat.cat
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - curriculum
+  - teaching_resource
+  license: unknown
+  admission: explicit_review
+  evidence_url: https://gencat.cat/
+  retrieved_at: '2026-09-14'
+  notes: Regional discovery entry; authority and rights need explicit document-level
+    verification. Other regions may enter through the same explicit-review route without
+    a wildcard over Spanish domains.
+- id: es-castile-leon
+  publisher: Autonomous-community curriculum authority
+  country: ES
+  domain: educa.jcyl.es
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - curriculum
+  - teaching_resource
+  license: unknown
+  admission: explicit_review
+  evidence_url: https://educa.jcyl.es/
+  retrieved_at: '2026-09-14'
+  notes: Regional discovery entry; authority and rights need explicit document-level
+    verification. Other regions may enter through the same explicit-review route without
+    a wildcard over Spanish domains.
+- id: ca-ontario
+  publisher: Ontario Ministry of Education
+  country: CA
+  domain: dcp.edu.gov.on.ca
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - curriculum
+  license: official-publication
+  admission: official_publication
+  evidence_url: https://www.dcp.edu.gov.on.ca/en/curriculum/science-technology
+  retrieved_at: '2026-09-14'
+  notes: Official-publication admission policy, not a blanket open copyright licence.
+    Explicit restrictions override this entry.
+- id: ca-ontario-cdn
+  publisher: Ontario curriculum hosted PDF
+  country: CA
+  domain: assets-us-01.kc-usercontent.com
+  include_subdomains: false
+  path_prefixes:
+  - /fbd574c4-da36-0066-a0c5-849ffb2de96e
+  document_types:
+  - curriculum
+  license: unknown
+  admission: explicit_review
+  evidence_url: https://www.dcp.edu.gov.on.ca/en/curriculum/science-technology
+  retrieved_at: '2026-09-14'
+  notes: Shared CDN; even the curriculum tenant requires explicit publisher evidence
+    tied to the actual PDF.
+- id: us-ngss
+  publisher: NGSS / Achieve
+  country: US
+  domain: nextgenscience.org
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - curriculum
+  - assessment_framework
+  - teaching_resource
+  license: unknown
+  admission: explicit_review
+  evidence_url: https://www.nextgenscience.org/resources/ngss-appendices
+  retrieved_at: '2026-09-14'
+  notes: Licences vary by document. A trusted explicit open/official review is required;
+    no blanket Creative Commons attribution.
+- id: unesco
+  publisher: UNESCO / OREALC / LLECE
+  country: INT
+  domain: unesco.org
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - assessment_framework
+  - research
+  - curriculum
+  license: unknown
+  admission: explicit_review
+  evidence_url: https://www.unesco.org/en/open-access/cc-sa
+  retrieved_at: '2026-09-14'
+  notes: Licences vary by document. A trusted explicit open/official review is required;
+    no blanket Creative Commons attribution.
+- id: unesdoc
+  publisher: UNESCO document repository
+  country: INT
+  domain: unesdoc.unesco.org
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - assessment_framework
+  - research
+  - curriculum
+  license: unknown
+  admission: explicit_review
+  evidence_url: https://unesdoc.unesco.org/
+  retrieved_at: '2026-09-14'
+  notes: Licences vary by document. A trusted explicit open/official review is required;
+    no blanket Creative Commons attribution.
+- id: oecd
+  publisher: OECD / PISA
+  country: INT
+  domain: oecd.org
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - assessment_framework
+  - research
+  - curriculum
+  license: unknown
+  admission: explicit_review
+  evidence_url: https://www.oecd.org/en/about/terms-conditions.html
+  retrieved_at: '2026-09-14'
+  notes: Licences vary by document. A trusted explicit open/official review is required;
+    no blanket Creative Commons attribution.
+- id: iea
+  publisher: IEA
+  country: INT
+  domain: iea.nl
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - assessment_framework
+  - research
+  - curriculum
+  license: unknown
+  admission: explicit_review
+  evidence_url: https://www.iea.nl/
+  retrieved_at: '2026-09-14'
+  notes: Licences vary by document. A trusted explicit open/official review is required;
+    no blanket Creative Commons attribution.
+- id: timss
+  publisher: IEA TIMSS, Boston College
+  country: INT
+  domain: timssandpirls.bc.edu
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - assessment_framework
+  - research
+  - curriculum
+  license: unknown
+  admission: explicit_review
+  evidence_url: https://timssandpirls.bc.edu/
+  retrieved_at: '2026-09-14'
+  notes: Licences vary by document. A trusted explicit open/official review is required;
+    no blanket Creative Commons attribution.
+- id: timss-legacy
+  publisher: IEA TIMSS, Boston College legacy
+  country: INT
+  domain: pirls.bc.edu
+  include_subdomains: true
+  path_prefixes:
+  - /
+  document_types:
+  - assessment_framework
+  - research
+  - curriculum
+  license: unknown
+  admission: explicit_review
+  evidence_url: https://pirls.bc.edu/timss2023/frameworks/pdf/T23_Frameworks_Ch2_Science.pdf
+  retrieved_at: '2026-09-14'
+  notes: Licences vary by document. A trusted explicit open/official review is required;
+    no blanket Creative Commons attribution.
