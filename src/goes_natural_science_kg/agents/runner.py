@@ -6,6 +6,7 @@
 import ast
 import asyncio
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, cast
 
@@ -54,15 +55,21 @@ def load_evidence(root: Path, request: OrchestrationInput) -> tuple[EvidencePack
 
 
 def imported_modules(path: Path, package: str) -> set[str]:
-    """Dotted names of this package that the module imports, including inside functions."""
+    """Read fresh contents; cache only the immutable parse result, never file paths."""
+    return set(imports_from_text(path.read_text(), package))
+
+
+@lru_cache(maxsize=256)
+def imports_from_text(text: str, package: str) -> frozenset[str]:
+    """Avoid reparsing unchanged modules at every checkpoint fingerprint."""
     names: set[str] = set()
-    for node in ast.walk(ast.parse(path.read_text())):
+    for node in ast.walk(ast.parse(text)):
         if isinstance(node, ast.Import):
             names.update(alias.name for alias in node.names)
         elif isinstance(node, ast.ImportFrom) and node.module:
             names.add(node.module)
             names.update(node.module + "." + alias.name for alias in node.names)
-    return {name for name in names if name == package or name.startswith(package + ".")}
+    return frozenset(name for name in names if name == package or name.startswith(package + "."))
 
 
 def module_file(package_root: Path, dotted: str) -> Path | None:

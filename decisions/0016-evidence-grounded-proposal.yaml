@@ -1,0 +1,121 @@
+schema_version: architecture-decision/1.0
+id: '0016'
+title: Build and critique a textbook-grounded curriculum proposal without claiming
+  validation
+status: accepted
+date: '2026-09-17'
+supersedes: null
+invariants:
+- 2
+- 3
+- 4
+- 5
+- 6
+- 8
+context: The maintainer requests a first graph/curriculum snapshot, explicit critique,
+  improved code and final proposed curriculum. The evaluation bank is a test sample,
+  not the complete national skill map. Decisions 0013-0015 show reviewer sensitivity;
+  model consensus cannot establish pedagogical truth. The old corpus index contains
+  alignment documents but no explanatory textbook evidence.
+options:
+- name: Unit-based proposal grounded in official textbooks and specialist review
+  pros:
+  - Restores topic coverage beyond the forty evaluation cases.
+  - Separates scientific source support, deterministic schedule validity and unvalidated
+    model review.
+  - Finite authored activity alternatives support exact solver budgets without invented
+    padding.
+  cons:
+  - Requires external teacher validation; model reviewers remain correlated.
+  - Official materials can contain extraction defects or errors and must be audited.
+- name: Extend existing evaluation cases until their hours sum to 160
+  pros:
+  - Smaller implementation.
+  cons:
+  - Would inflate narrow tasks and confuse evaluation coverage with annual curricular
+    coverage.
+criteria:
+- Traceable page and paragraph support for scientific claims.
+- Observable tasks, expected responses and scoring rules.
+- No unconditional AI approval or uncalibrated confidence probabilities.
+- Versioned draft and final proposal with a review trail and exact scheduling certificates.
+decision: Add a proposal subgraph alongside the frozen experimental hierarchy. Fan
+  out by reviewed textbook unit, create two complementary skill archetypes, and decompose
+  to independently assessable micro-skills. Generate a finite justified activity bank,
+  then run five separate criterion-specific reviews. Deterministic reference, quote,
+  cycle and timing checks are hard gates. Require at least four of five votes at score
+  >=0.8, evidence and age vetoes, no critical issue, with at most three optimizer
+  revisions. Preserve disagreement and unresolved items. Candidate production is not
+  production prompt promotion. Compile context-free graphs and let CP-SAT alone assign
+  calendars.
+consequences:
+- Final means final proposed artifact, not ministry approval, human review or demonstrated
+  learning effectiveness. All outputs retain provisional status.
+- Use 32 textbook teaching weeks with 300 planning minutes per week to model the requested
+  160 clock-hour scenario. This is not a verified official timetable; session length
+  remains configurable. Spacing must be interpreted against this scenario rather than
+  the previous implicit 40-week calendar.
+- Atomic assessment includes a concrete task, expected response and scoring rule.
+  Reasoning requires inference or justification with evidence; a high-level verb alone
+  is insufficient. No monotone cognitive-domain prerequisite rule is imposed.
+- Scientific claims cite explanatory books or teaching resources, not only curriculum
+  prescriptions. Existing curriculum sources remain alignment evidence.
+- Exact quote matching verifies location only; the evidence judge separately assesses
+  support. Claims and misconceptions without empirical prevalence data remain hypotheses
+  or design decisions.
+- The PDF served at the grade-2 volume-2 URL on retrieval repeated volume-1 content.
+  Retain its admitted-source record but exclude it from semantic support; use the
+  official volume-2 teacher guide with explicit provenance.
+- Raw PDFs, extracted pages, request bodies and live caches remain ignored. Published
+  evidence bindings use source hashes, page/paragraph offsets and quote hashes; do
+  not redistribute textbooks inside model-request recordings.
+- Identity is stable across revisions when the same instructional construct remains.
+  Removed or substituted constructs remain visible in the semantic diff.
+- Benchmark and report source preparation, runtime, review revisions, structural failures
+  and bounded solver feasibility separately. No single quality score is presented
+  as objective truth.
+- Provider schema simplification removes unsupported grammar constraints only; the
+  complete Pydantic contract validates every response. Two-stage generation and named
+  patches limit unrelated rewrites. Transport retries are bounded separately from
+  the three pedagogical revisions.
+- A one-pass rubric-1.1 review does not reset optimization limits. Editorial changes
+  after it invalidate candidate approval; prior verdicts retain their candidate hashes.
+- For large fixed-grade atomic-teach banks, a deterministic topological starting schedule
+  and bounded subset-sum choices seed CP-SAT. Standard-library TopologicalSorter supplies
+  the linear topological operation unavailable in scipy.sparse; numerical cycle checks
+  remain sparse. Hints never bypass the complete constraints or independent audit.
+- The intermediate feasible incumbent selected zero contexts, exposing a weakness
+  in the soft objective search. The final hint seeds one authored alternative per
+  available context under all existing caps and variety rules. No minimum contextualization
+  percentage is invented.
+- The final decomposition is 306 micro-skills over 60 authored parent skills (5.1x).
+  The 6x target remains unmet rather than satisfied through artificial splitting.
+  Global prerequisite completeness and advanced-topic age suitability remain teacher-review
+  issues.
+- A bounded second CP-SAT solve fixes the temporal incumbent and optimizes its separable
+  contextual alternatives. It can only replace the incumbent with an equal or better
+  objective; the original global lower bound and global optimality status are retained.
+  Conditional context optimality is not global curriculum optimality.
+- The benchmark workload expands from 81 to 117 schema exports and 35 to 50 prompt
+  artifacts. Refresh only those two reference cases, retain their previous baseline
+  and preserve unchanged-workload references. Cache immutable import parsing by full
+  source content to reduce checkpoint overhead without hiding edits.
+- Reuse an identical verified index generation without rewriting its chunks, vectors
+  or current pointer. If cached bytes differ, regenerate them atomically from the
+  supplied canonical content; do not trust the directory name alone.
+enforced_by:
+- tests/unit/test_release.py::test_panel_requires_evidence_and_age_and_rejects_critical_issues
+- tests/unit/test_release.py::test_quote_and_dependency_validation_detects_corruption
+- tests/integration/test_proposal_snapshot.py::test_real_proposal_has_audited_calendars_and_retains_rejected_draft
+- tests/integration/test_proposal_snapshot.py::test_warm_start_is_finite_topological_and_deterministic
+- tests/integration/test_proposal_snapshot.py::test_context_seed_uses_authored_alternatives_and_obeys_caps
+evidence:
+  findings: Primary textbook catalog and existing reviewer experiments; policy choices
+    are engineering/pedagogical hypotheses, not validated cut points.
+  claim_ids: []
+  source_url:
+  - https://www.mined.gob.sv/ciencia-educativa/
+  retrieved_at: '2026-09-17'
+implementation_status: Implemented with live Vertex generation and bounded review,
+  first rejected aggregate, an intermediate feasible calendar, and a final proposed
+  calendar. Human validation and production prompt promotion remain pending.

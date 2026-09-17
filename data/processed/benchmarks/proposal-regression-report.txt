@@ -1,0 +1,160 @@
+Comparing against benchmarks from: tests/benchmarks/baseline.json
+.............................                                            [100%]
+Wrote benchmark data in: reports/release-regression-final.json
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------- benchmark: 58 tests ---------------------------------------------------------------------------------------------------------------------------------------------
+Name (time in ns)                                                                        Min                           Max                          Mean                     StdDev                        Median                        IQR            Outliers              OPS            Rounds  Iterations
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_release_bounded_identity (NOW)                                                   0.0000 (1.0)             26,083.0857 (1.33)                70.5347 (1.0)             387.8811 (inf)                 42.0259 (1.0)              40.9782 (inf)        45;273  14,177,411.5868 (1.0)       21183           1
+test_diff_summary (tests/benchmarks/baseline)                                     1,500.0114 (inf)             36,041.9508 (1.84)             1,758.4936 (24.93)           373.8374 (inf)              1,708.9769 (40.66)            42.1423 (inf)    2709;13804     568,668.5555 (0.04)     101699           1
+test_source_quote_location (tests/benchmarks/baseline)                            1,624.9251 (inf)             65,958.0110 (3.38)             1,906.4148 (27.03)           628.3374 (inf)              1,874.9852 (44.61)            81.9564 (inf)       75;1206     524,544.8289 (0.04)      23392           1
+test_diff_summary (NOW)                                                           1,625.0415 (inf)             67,625.0784 (3.46)             1,834.6398 (26.01)           825.9616 (inf)              1,791.9810 (42.64)            83.1205 (inf)       78;1385     545,066.1212 (0.04)      25947           1
+test_source_quote_location (NOW)                                                  1,790.9333 (inf)             44,999.9934 (2.30)             2,032.4912 (28.82)           662.2059 (inf)              1,999.8988 (47.59)            83.9354 (inf)        92;737     492,007.0565 (0.03)      15375           1
+test_release_bounded_identity (tests/benchmarks/baseline)                         2,000.0152 (inf)             78,959.0413 (4.04)             2,424.1836 (34.37)           986.7555 (inf)              2,374.9890 (56.51)            84.0519 (inf)      122;1703     412,510.0019 (0.03)      27555           1
+test_benchmark_reference_matching (tests/benchmarks/baseline)                     2,457.9931 (inf)             19,541.0103 (1.0)              3,021.3001 (42.83)           969.1532 (inf)              2,874.9928 (68.41)           124.9136 (inf)        12;156     330,983.3437 (0.02)       1000           1
+test_benchmark_reference_matching (NOW)                                           2,750.0791 (inf)             19,833.9112 (1.01)             3,069.2997 (43.51)           654.0564 (inf)              2,917.0187 (69.41)           125.0301 (inf)        27;166     325,807.2150 (0.02)       1000           1
+test_reference_agreement_single_case (tests/benchmarks/baseline)                  4,458.0083 (inf)          1,600,875.0536 (81.92)            5,515.7976 (78.20)         8,048.8612 (inf)              5,125.0681 (121.95)          125.1465 (inf)     1388;9309     181,297.4421 (0.01)      91601           1
+test_reference_agreement_single_case (NOW)                                        4,875.0080 (inf)            115,584.0000 (5.91)             5,315.8799 (75.37)         1,597.2534 (inf)              5,207.9558 (123.92)          124.9136 (inf)      308;2564     188,115.6122 (0.01)      42858           1
+test_release_provider_grammar (tests/benchmarks/baseline)                        22,749.9986 (inf)            127,749.9832 (6.54)            26,231.6826 (371.90)        2,986.4249 (inf)             25,790.9996 (613.69)          542.0297 (inf)     1864;4001      38,121.8397 (0.00)      26936           1
+test_release_provider_grammar (NOW)                                              25,374.9313 (inf)            182,208.0230 (9.32)            28,820.8557 (408.61)        7,952.3958 (inf)             26,874.9427 (639.48)          874.9776 (inf)     1254;3863      34,697.0961 (0.00)      25344           1
+test_license_gate (tests/benchmarks/baseline)                                    30,291.9652 (inf)             90,833.0549 (4.65)            32,321.4315 (458.23)        2,674.6112 (inf)             31,625.0371 (752.51)          584.0557 (inf)       548;872      30,939.2238 (0.00)       6336           1
+test_license_gate (NOW)                                                          30,957.9773 (inf)            289,165.9969 (14.80)           34,065.6742 (482.96)       11,513.4706 (inf)             32,416.0792 (771.34)        1,166.0159 (inf)        66;291      29,355.0626 (0.00)       2826           1
+test_quote_offset_verification (tests/benchmarks/baseline)                      112,000.0379 (inf)            812,792.1028 (41.59)          117,845.2145 (>1000.0)      11,786.5035 (inf)            115,333.0086 (>1000.0)       5,166.0463 (inf)       302;434       8,485.7073 (0.00)       6727           1
+test_quote_offset_verification (NOW)                                            113,917.0490 (inf)            251,917.0521 (12.89)          120,319.8184 (>1000.0)      10,021.6289 (inf)            117,957.9413 (>1000.0)       3,458.0880 (inf)       363;604       8,311.1828 (0.00)       6667           1
+test_solver_preflight_and_source_graph (tests/benchmarks/baseline)              119,125.0049 (inf)            254,040.9332 (13.00)          131,239.3010 (>1000.0)       8,943.5653 (inf)            129,125.0810 (>1000.0)       6,166.9853 (inf)       424;268       7,619.6687 (0.00)       4213           1
+test_solver_preflight_and_source_graph (NOW)                                    122,541.9110 (inf)            472,749.9327 (24.19)          138,346.4278 (>1000.0)      18,385.3985 (inf)            135,791.9537 (>1000.0)       7,541.9666 (inf)       160;247       7,228.2314 (0.00)       4029           1
+test_manifest_roundtrip (tests/benchmarks/baseline)                             193,541.9859 (inf)            995,334.0050 (50.94)          228,200.2535 (>1000.0)      46,732.1510 (inf)            212,125.0145 (>1000.0)      29,229.5008 (inf)       235;210       4,382.1161 (0.00)       2580           1
+test_manifest_roundtrip (NOW)                                                   200,207.9273 (inf)          1,561,833.0799 (79.93)          268,022.6449 (>1000.0)     120,227.8076 (inf)            224,562.4783 (>1000.0)      57,124.9984 (inf)       125;151       3,731.0280 (0.00)       1634           1
+test_release_graph_compilation_and_checks (NOW)                                 403,875.0194 (inf)          3,677,000.0588 (188.17)         568,630.7149 (>1000.0)     318,206.6250 (inf)            447,208.5275 (>1000.0)      87,667.0238 (inf)       117;181       1,758.6106 (0.00)       1082           1
+test_release_graph_compilation_and_checks (tests/benchmarks/baseline)           410,374.9525 (inf)            644,167.0703 (32.96)          456,826.8875 (>1000.0)      23,283.4577 (inf)            451,833.0097 (>1000.0)      17,291.9827 (inf)        101;73       2,189.0130 (0.00)        898           1
+test_sparse_graph_validation (tests/benchmarks/baseline)                        721,959.0480 (inf)          1,092,209.0150 (55.89)          803,279.1578 (>1000.0)      41,433.7958 (inf)            791,958.5332 (>1000.0)      39,457.9256 (inf)         82;23       1,244.8972 (0.00)        450           1
+test_sparse_graph_validation (NOW)                                              735,290.9306 (inf)          2,445,999.9986 (125.17)         885,737.2907 (>1000.0)     162,181.7873 (inf)            836,000.5450 (>1000.0)     121,582.9980 (inf)         80;68       1,129.0029 (0.00)        796           1
+test_gate_workflow (tests/benchmarks/baseline)                                  778,625.0208 (inf)          1,237,457.9674 (63.33)          852,812.3967 (>1000.0)      73,682.2779 (inf)            826,999.9526 (>1000.0)      64,500.0255 (inf)         52;29       1,172.5908 (0.00)        358           1
+test_normalize_real_text (tests/benchmarks/baseline)                            794,459.0179 (inf)            957,374.9267 (48.99)          836,144.0050 (>1000.0)      26,903.6516 (inf)            827,125.0408 (>1000.0)      27,478.4979 (inf)        263;80       1,195.9662 (0.00)       1144           1
+test_gate_workflow (NOW)                                                        806,833.0353 (inf)          8,740,707.9991 (447.30)       1,518,894.1133 (>1000.0)   1,158,020.5336 (inf)          1,125,791.5176 (>1000.0)     619,749.5968 (inf)         14;17         658.3737 (0.00)        200           1
+test_normalize_real_text (NOW)                                                  814,000.0282 (inf)          2,631,040.9885 (134.64)         895,216.9218 (>1000.0)     130,338.2214 (inf)            856,728.9915 (>1000.0)      49,583.0318 (inf)        81;128       1,117.0477 (0.00)       1100           1
+test_apply_calibration_50000_scores (tests/benchmarks/baseline)               1,111,167.0174 (inf)          1,426,500.0354 (73.00)        1,223,400.6007 (>1000.0)      50,725.8895 (inf)          1,216,833.0140 (>1000.0)      65,698.7540 (inf)         102;5         817.3937 (0.00)        329           1
+test_apply_calibration_50000_scores (NOW)                                     1,203,292.0495 (inf)          1,663,916.9771 (85.15)        1,330,012.3715 (>1000.0)      82,089.8683 (inf)          1,315,499.9469 (>1000.0)      98,604.0686 (inf)        126;16         751.8727 (0.00)        428           1
+test_semantic_chunk_and_trace (tests/benchmarks/baseline)                     1,266,375.0676 (inf)          1,524,167.0189 (78.00)        1,316,537.8172 (>1000.0)      37,362.8509 (inf)          1,304,666.0461 (>1000.0)      43,603.7080 (inf)        171;28         759.5680 (0.00)        713           1
+test_semantic_chunk_and_trace (NOW)                                           1,284,791.0402 (inf)          3,022,624.9946 (154.68)       1,376,339.5046 (>1000.0)     139,456.9786 (inf)          1,339,187.4963 (>1000.0)      66,394.9759 (inf)         45;52         726.5649 (0.00)        624           1
+test_benchmark_prompt_registry (tests/benchmarks/baseline)                    1,303,708.9957 (inf)          1,813,457.9295 (92.80)        1,392,887.6724 (>1000.0)      90,367.4920 (inf)          1,373,082.9814 (>1000.0)      77,667.2969 (inf)           2;1         717.9330 (0.00)         33           1
+test_benchmark_prompt_registry (NOW)                                          1,349,542.0571 (inf)          1,781,790.9829 (91.18)        1,448,017.9952 (>1000.0)     109,487.5770 (inf)          1,412,666.4610 (>1000.0)     126,166.0364 (inf)           3;2         690.5992 (0.00)         30           1
+test_jsonld_120_micro_skills (tests/benchmarks/baseline)                      1,391,500.0018 (inf)          5,150,542.0124 (263.58)       1,461,382.3788 (>1000.0)     182,444.0434 (inf)          1,439,749.9617 (>1000.0)      56,614.9829 (inf)          5;13         684.2836 (0.00)        673           1
+test_jsonld_120_micro_skills (NOW)                                            1,395,792.0019 (inf)          2,834,041.9522 (145.03)       1,503,482.5677 (>1000.0)     132,327.9487 (inf)          1,462,207.9907 (>1000.0)      91,832.9461 (inf)         53;46         665.1224 (0.00)        588           1
+test_index_real_evidence (NOW)                                                2,102,250.0005 (inf)         63,044,916.9548 (>1000.0)      8,422,845.6020 (>1000.0)  19,196,029.0382 (inf)          2,203,707.9907 (>1000.0)     290,457.9742 (inf)           1;2         118.7247 (0.00)         10           1
+test_index_real_evidence (tests/benchmarks/baseline)                          2,523,749.9503 (inf)         52,665,334.0785 (>1000.0)      7,796,233.4151 (>1000.0)  15,769,140.7207 (inf)          2,724,063.0006 (>1000.0)     476,958.1137 (inf)           1;1         128.2671 (0.00)         10           1
+test_rescore_forty_recorded_cases (tests/benchmarks/baseline)                 4,876,499.9956 (inf)          5,453,249.9053 (279.07)       5,083,415.5500 (>1000.0)     116,100.5192 (inf)          5,066,458.4851 (>1000.0)     173,188.0475 (inf)          71;1         196.7181 (0.00)        192           1
+test_rescore_forty_recorded_cases (NOW)                                       5,039,875.0464 (inf)          6,166,749.9831 (315.58)       5,335,596.1455 (>1000.0)     218,550.6996 (inf)          5,282,792.0299 (>1000.0)     215,405.5983 (inf)         38;13         187.4205 (0.00)        159           1
+test_diff_1000_nodes (tests/benchmarks/baseline)                              7,680,749.9863 (inf)          8,341,458.9753 (426.87)       7,952,522.7623 (>1000.0)     142,082.6761 (inf)          7,922,834.0182 (>1000.0)     201,260.3218 (inf)          48;0         125.7463 (0.00)        119           1
+test_diff_1000_nodes (NOW)                                                    7,755,208.0620 (inf)          9,160,415.9679 (468.78)       8,268,057.3809 (>1000.0)     217,405.1753 (inf)          8,279,250.0034 (>1000.0)     261,083.0124 (inf)          37;2         120.9474 (0.00)        114           1
+test_fit_isotonic_5000_samples (tests/benchmarks/baseline)                   18,663,625.0000 (inf)         57,512,874.9479 (>1000.0)     22,266,867.6353 (>1000.0)   7,162,399.6858 (inf)         19,213,874.9408 (>1000.0)   2,107,834.4726 (inf)           6;9          44.9098 (0.00)         45           1
+test_fit_isotonic_5000_samples (NOW)                                         19,978,957.9492 (inf)         66,084,958.0308 (>1000.0)     24,562,726.7692 (>1000.0)   8,017,252.6616 (inf)         21,960,249.9856 (>1000.0)   2,988,312.6554 (inf)           4;9          40.7121 (0.00)         43           1
+test_fixed_grade_schedule_hint (tests/benchmarks/baseline)                   34,980,249.9404 (inf)         36,059,875.0412 (>1000.0)     35,585,184.8872 (>1000.0)     319,563.2318 (inf)         35,600,707.9827 (>1000.0)     427,624.9674 (inf)           5;0          28.1016 (0.00)         16           1
+test_fixed_grade_schedule_hint (NOW)                                         36,432,499.9973 (inf)         42,150,583.0018 (>1000.0)     38,632,398.3694 (>1000.0)   2,133,728.5908 (inf)         37,531,270.9948 (>1000.0)   3,888,749.5175 (inf)           5;0          25.8850 (0.00)         16           1
+test_schema_exports (tests/benchmarks/baseline)                              64,843,290.9511 (inf)         68,286,124.9661 (>1000.0)     65,923,919.5986 (>1000.0)     787,445.5674 (inf)         65,688,166.0689 (>1000.0)     687,697.9605 (inf)           3;1          15.1690 (0.00)         15           1
+test_parse_real_pdf[1] (tests/benchmarks/baseline)                           68,908,166.9552 (inf)        130,703,874.9801 (>1000.0)     81,613,441.8128 (>1000.0)  27,443,978.3344 (inf)         69,427,750.0734 (>1000.0)  15,775,801.7594 (inf)           1;1          12.2529 (0.00)          5           1
+test_parse_real_pdf[1] (NOW)                                                 68,978,083.9020 (inf)        179,744,624.9984 (>1000.0)     92,171,650.1936 (>1000.0)  48,992,788.1959 (inf)         69,275,167.0722 (>1000.0)  30,967,729.1079 (inf)           1;1          10.8493 (0.00)          5           1
+test_schema_exports (NOW)                                                    69,181,584.0546 (inf)         93,606,208.9168 (>1000.0)     74,135,366.1953 (>1000.0)   7,225,535.0758 (inf)         71,161,812.9280 (>1000.0)   5,277,749.9659 (inf)           2;2          13.4888 (0.00)         14           1
+test_parse_real_pdf[2] (tests/benchmarks/baseline)                          131,817,625.0206 (inf)        206,127,916.9284 (>1000.0)    149,234,500.1781 (>1000.0)  31,859,871.9257 (inf)        136,357,666.9246 (>1000.0)  19,258,604.5305 (inf)           1;1           6.7009 (0.00)
+--------------------------------------------------------------------------------
+Performance has regressed:
+	test_gate_workflow (tests/benchmarks/baseline) - Field 'mean' has failed PercentageRegressionCheck: 78.104131597 > 20.000000000
+	test_release_graph_compilation_and_checks (tests/benchmarks/baseline) - Field 'mean' has failed PercentageRegressionCheck: 24.474003269 > 20.000000000
+--------------------------------------------------------------------------------
+       5           1
+test_parse_real_pdf[2] (NOW)                                                134,528,290.9460 (inf)        194,019,875.0235 (>1000.0)    146,969,333.2212 (>1000.0)  26,307,380.4858 (inf)        135,396,208.0320 (>1000.0)  15,627,052.5185 (inf)           1;1           6.8041 (0.00)          5           1
+test_recorded_hierarchy_with_sqlite (tests/benchmarks/baseline)             187,797,707.9712 (inf)        205,833,374.9883 (>1000.0)    193,999,249.9926 (>1000.0)  10,252,600.3731 (inf)        188,366,667.0183 (>1000.0)  13,526,750.2628 (inf)           1;0           5.1547 (0.00)          3           1
+test_recorded_hierarchy_with_sqlite (NOW)                                   196,821,958.0594 (inf)        236,647,499.9581 (>1000.0)    210,277,124.6573 (>1000.0)  22,839,010.6782 (inf)        197,361,915.9544 (>1000.0)  29,869,156.4240 (inf)           1;0           4.7556 (0.00)          3           1
+test_parse_real_pdf[0] (tests/benchmarks/baseline)                          659,515,499.9522 (inf)        747,614,499.9964 (>1000.0)    713,015,733.4032 (>1000.0)  33,984,619.7561 (inf)        724,885,709.0017 (>1000.0)  43,100,968.0033 (inf)           2;0           1.4025 (0.00)          5           1
+test_parse_real_pdf[0] (NOW)                                                704,753,999.9476 (inf)        860,123,707.9129 (>1000.0)    778,513,875.1846 (>1000.0)  56,595,131.6490 (inf)        773,806,334.0075 (>1000.0)  66,587,427.4564 (inf)           2;0           1.2845 (0.00)          5           1
+test_cp_sat_schedule_205_activities (tests/benchmarks/baseline)           3,130,632,083.9794 (inf)      3,130,632,083.9794 (>1000.0)  3,130,632,083.9794 (>1000.0)           0.0000 (1.0)      3,130,632,083.9794 (>1000.0)           0.0000 (1.0)           0;0           0.3194 (0.00)          1           1
+test_cp_sat_schedule_205_activities (NOW)                                 3,134,595,707.9902 (inf)      3,134,595,707.9902 (>1000.0)  3,134,595,707.9902 (>1000.0)           0.0000 (1.0)      3,134,595,707.9902 (>1000.0)           0.0000 (1.0)           0;0           0.3190 (0.00)          1           1
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Legend:
+  Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
+  OPS: Operations Per Second, computed as 1 / Mean
+Traceback (most recent call last):
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/bin/pytest", line 10, in <module>
+    sys.exit(_console_main())
+             ~~~~~~~~~~~~~^^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/_pytest/config/__init__.py", line 253, in _console_main
+    code = _main(prog=_get_prog_name(sys.argv))
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/_pytest/config/__init__.py", line 229, in _main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/pluggy/_callers.py", line 167, in _multicall
+    raise exception
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/_pytest/main.py", line 377, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/_pytest/main.py", line 365, in wrap_session
+    config.hook.pytest_sessionfinish(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        session=session, exitstatus=session.exitstatus
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/pluggy/_callers.py", line 167, in _multicall
+    raise exception
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/pluggy/_callers.py", line 139, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/_pytest/logging.py", line 888, in pytest_sessionfinish
+    return (yield)
+            ^^^^^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/pluggy/_callers.py", line 152, in _multicall
+    teardown.send(result)
+    ~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/_pytest/terminal.py", line 972, in pytest_sessionfinish
+    self.config.hook.pytest_terminal_summary(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        terminalreporter=self, exitstatus=exitstatus, config=self.config
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+           ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/pluggy/_callers.py", line 167, in _multicall
+    raise exception
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/pluggy/_callers.py", line 139, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/_pytest/terminal.py", line 1005, in pytest_terminal_summary
+    return (yield)
+            ^^^^^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/pluggy/_callers.py", line 139, in _multicall
+    teardown.throw(exception)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/_pytest/warnings.py", line 110, in pytest_terminal_summary
+    return (yield)
+            ^^^^^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/pytest_benchmark/plugin.py", line 405, in pytest_terminal_summary
+    terminalreporter.config._benchmarksession.display(terminalreporter)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/pytest_benchmark/session.py", line 248, in display
+    self.check_regressions()
+    ~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Users/carlosdaniel/Desktop/goes-natural-science-kg/.venv/lib/python3.13/site-packages/pytest_benchmark/session.py", line 260, in check_regressions
+    raise PerformanceRegression('Performance has regressed.')
+pytest_benchmark.session.PerformanceRegression: Performance has regressed.

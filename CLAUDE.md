@@ -1,5 +1,24 @@
 # CLAUDE.md — working contract for `goes-natural-science-kg`
 
+## Evidence-grounded proposal amendments (2026-09-17)
+
+The maintainer authorizes a first curriculum snapshot, critique, a revised final
+proposal and a conventional commit/push using the configured GOES identity. Do not
+add fictional co-authors. Vertex transfer of public MINED excerpts and generated
+proposals to project `g-edu-lxp-xai-dev-prj-976d`, global endpoint, was explicitly
+authorized in chat. Preserve the existing credentials without printing or editing them.
+Decision 0016 governs the experimental proposal route. Separate skill decomposition
+from finite activity-bank design; validate exact quotation locations and structural
+constraints before specialist review. Apply explicit optimizer patches, retain every
+provider failure, and distinguish transport retries from pedagogical revisions.
+Provider grammar simplification never weakens the local Pydantic acceptance contract.
+Generated proposal prompts are experimental; they have not passed the historical
+human-review promotion gate. Unit-panel agreement is an uncalibrated review signal.
+Retain immutable draft/final products, source-offset hashes, critique and solver
+certificates. Full textbooks and source-bearing model requests remain ignored.
+Explicit cross-grade handoffs belong to the scheduling layer; topic similarity alone
+must not create prerequisite edges. A final proposal is not a classroom approval.
+
 ## Runtime and documentation amendments (2026-09-14)
 
 The maintainer requires Python 3.13 and uv-managed installation for the interpreter,

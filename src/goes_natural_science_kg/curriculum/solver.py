@@ -222,6 +222,7 @@ def absolute_minutes(c: ConstraintModel, expression: Any, upper: int, label: str
 def objectives(data: SequencingInput, settings: SequencingSettings, c: ConstraintModel) -> None:
     budget = settings.budget_hours * 60
     balance, cognition, theme_flags = [], [], []
+    activity_by_id = {a.id: a for a in data.activities}
     allocations = {a.id: domain_minutes(data, a.id) for a in data.activities}
     for g in range(2, 7):
         for domain, percent in settings.domain_target_percent.items():
@@ -266,9 +267,7 @@ def objectives(data: SequencingInput, settings: SequencingSettings, c: Constrain
                     [
                         z
                         for (key, grade, period), z in c.placements.items()
-                        if grade == g
-                        and period == t
-                        and next(a.theme for a in data.activities if a.id == key) == theme
+                        if grade == g and period == t and activity_by_id[key].theme == theme
                     ]
                     + [0],
                 )
@@ -338,6 +337,30 @@ def solve(data: SequencingInput, settings: SequencingSettings) -> SolverReport:
     dependencies(data, settings, c)
     contexts(data, settings, c)
     objectives(data, settings, c)
+    if len(data.activities) >= 500:
+        from goes_natural_science_kg.curriculum.hints import context_hint, schedule_hint
+
+        hints = {h.activity_id: h for h in schedule_hint(data, settings)}
+        if hints:
+            for activity in data.activities:
+                hint = hints.get(activity.id)
+                c.model.add_hint(c.selected[activity.id], int(hint is not None))
+                c.model.add_hint(c.starts[activity.id], hint.start if hint else 0)
+                c.model.add_hint(c.grades[activity.id], hint.grade if hint else 2)
+            for (key, grade, period), variable in c.placements.items():
+                hint = hints.get(key)
+                lower, upper = period_bounds(grade, period, settings)
+                c.model.add_hint(
+                    variable,
+                    int(
+                        hint is not None
+                        and hint.grade == grade
+                        and lower <= hint.start < hint.end <= upper
+                    ),
+                )
+            contextualized = context_hint(data, settings, tuple(hints.values()))
+            for context_key, variable in c.contexts.items():
+                c.model.add_hint(variable, int(context_key in contextualized))
     solver = cp_model.CpSolver()
     solver.parameters.num_search_workers = 1
     solver.parameters.random_seed = settings.seed
@@ -349,6 +372,9 @@ def solve(data: SequencingInput, settings: SequencingSettings) -> SolverReport:
             hard_errors=("No certified schedule: " + solver.status_name(status),),
             **common,
         )
+    global_bound = solver.best_objective_bound
+    if len(data.activities) >= 500 and settings.weights.context_variety > 0 and data.contexts:
+        solver = refine_context_selection(c, solver, settings)
     grades = extract(data, settings, c, solver)
     hard_errors, coverage, metrics = audit(data, settings, grades)
     return SolverReport(
@@ -362,9 +388,30 @@ def solve(data: SequencingInput, settings: SequencingSettings) -> SolverReport:
         grade_metrics=metrics,
         grades=grades if not hard_errors else (),
         objective_value=solver.objective_value,
-        best_bound=solver.best_objective_bound,
+        best_bound=global_bound,
         objective_components={
             name: int(solver.value(value)) for name, value in c.components.items()
         },
         **common,
     )
+
+
+def refine_context_selection(
+    c: ConstraintModel, solver: cp_model.CpSolver, settings: SequencingSettings
+) -> cp_model.CpSolver:
+    """Optimize context choices conditional on the fixed temporal incumbent."""
+    c.model.clear_hints()
+    for variables in (c.selected, c.starts, c.grades):
+        for variable in variables.values():
+            c.model.add(variable == solver.value(variable))
+    contextual = cp_model.CpSolver()
+    contextual.parameters.num_search_workers = 1
+    contextual.parameters.random_seed = settings.seed
+    contextual.parameters.max_deterministic_time = min(1.0, settings.max_deterministic_time)
+    status = contextual.solve(c.model)
+    if (
+        status in (cp_model.OPTIMAL, cp_model.FEASIBLE)
+        and contextual.objective_value <= solver.objective_value
+    ):
+        return contextual
+    return solver

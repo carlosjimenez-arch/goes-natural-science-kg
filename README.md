@@ -7,327 +7,252 @@
 ## Contents
 
 - [Overview](#overview)
-- [Project status](#project-status)
+- [Current proposal](#current-proposal)
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Usage](#usage)
 - [Architecture](#architecture)
-- [Data, evidence and licensing](#data-evidence-and-licensing)
-- [Quality and evaluation](#quality-and-evaluation)
+- [Evidence and licensing](#evidence-and-licensing)
+- [Evaluation and performance](#evaluation-and-performance)
 - [Development](#development)
 - [License](#license)
 
 ## Overview
 
 An evidence-backed AI engineering pipeline for designing Natural Science curricula
-for **El Salvador, grades 2–6**. The system ingests admissible source documents,
-models observable skills, evaluates agent outputs and schedules authored learning
-activities under an exact annual time budget.
+for **El Salvador, grades 2–6**. Models propose observable skills and finite learning
+activities; specialist reviewers assess them; CP-SAT computes an annual calendar.
+Source evidence, review judgments and scheduling certificates remain separate.
 
-LLMs propose and review content. A deterministic constraint solver schedules it.
-Every published schedule preserves its input approval status; passing software
-checks does not establish instructional quality or scientific validity.
+**Research prototype. The published curriculum is a proposal requiring teacher
+review, not an approved national curriculum or a demonstrated learning intervention.**
 
-## Project status
+## Current proposal
 
-**Research and engineering prototype. No classroom-ready curriculum is approved.**
+The September 17 release covers **30 official textbook units**, organized into
+**60 proposed parent skills and 306 micro-skills**. Each micro-skill has an observable
+assessment, expected response, scoring rule and source location. The final calendar
+contains **9,600 minutes per grade**, with no violations of the declared hard constraints.
 
-| Component | Implemented | Current limit |
-|---|---|---|
-| Research and contracts | Primary-source findings, typed schemas, stable IDs and semantic graph diffs | AND/OR prerequisite routes remain a proposed extension |
-| Corpus | License gate, PDF extraction, semantic chunks, embeddings and traceable index | Eight accepted national documents per grade across six countries; TIMSS/NGSS corpus admission remains unresolved |
-| Agent hierarchy | Four LangGraph levels, specialized judges, bounded revisions, checkpoints and caches | Rejected items require human review |
-| Prompt evaluation | Three variants per critical role, three replicas, recorded provider responses, offline replay, a seven-arm decomposition follow-up across prompts and five Gemini models, a revised offline score and a three-model reviewer agreement study | Reference cases are agent-authored; no decomposition prompt or model reaches the pass threshold, and the reviewer model shifts the score more than any generator change |
-| Curricularization | CP-SAT scheduling, independent audit, JSON-LD and generated HTML reports | The provisional graph supplies only 640 of the required 9,600 minutes per grade |
+| Artifact | Purpose |
+|---|---|
+| [Final curriculum proposal](data/processed/proposals/2026-09-17/v5/curriculum-proposal.html) | Skills, micro-skills, assessments, materials, safety and differentiation |
+| [Calendar and coverage report](data/processed/proposals/2026-09-17/v5/report.html) | Actual selected tasks, time allocation, cognitive/content balance and contexts |
+| [Final reproducible input](data/processed/proposals/2026-09-17/v5/skills-map.json) | Graph, finite activity bank, local contexts and continuity constraints |
+| [Grade calendars](data/processed/curriculum/) | Schema-validated `grade_2.json` through `grade_6.json` and JSON-LD export |
+| [First snapshot](data/processed/proposals/2026-09-17/v1/) | Initial aggregate graph and rejected scheduling attempt; no fabricated calendar |
+| [Intermediate snapshots](data/processed/proposals/2026-09-17/) | Versions 2–4 retain the context-selection failures diagnosed before final version 5 |
+| [Critique](data/processed/proposals/2026-09-17/critique.json) and [semantic diff](data/processed/proposals/2026-09-17/semantic-diff.json) | Corrections, unresolved concerns and first-to-final graph changes |
+| [Review and cost audit](data/processed/proposals/2026-09-17/run-audit.json) | Actual provider calls, failures, revisions, token usage and estimated cost |
+| [Evidence audit](data/processed/proposals/2026-09-17/v5/binding-audit.json) | Original document hashes and 317 verified quotation locations |
 
-The solver rejects that incomplete input. The schedules in
-[`data/processed/curriculum/examples/`](data/processed/curriculum/examples/) are
-**synthetic engineering fixtures**, not recommended lessons. Evidence, decisions
-and measured results remain available in the repository for review.
+Limits are material. Only **2 of 30 final candidates retain a passing model panel**;
+others fail review or changed after verification. All require human validation.
+The 5.1× decomposition ratio falls below the requested 6× target. Parent skills are
+an authored abstraction of the books, not an independently supplied official skill
+map. Some advanced topics, missing content-domain coverage and global prerequisite
+completeness require curricular adjudication. A valid timetable does not resolve them.
+
+The first aggregate had nine passing panels. A revised rubric passed three candidates
+before further editorial corrections. These are different candidates and review
+conditions, not a controlled estimate of improvement. Model votes are uncalibrated.
 
 ## Installation
 
-Requirements: **Python 3.13** and **uv 0.12.13**. uv manages the interpreter, virtual
-environment, application dependencies and development tools. Direct dependencies
-are pinned in [`pyproject.toml`](pyproject.toml); [`uv.lock`](uv.lock) fixes the
-resolved dependency set and distribution hashes.
+Use **Python 3.13** and **uv 0.12.13**. uv manages the interpreter, environment,
+application and development tools. Direct versions are exact in
+[`pyproject.toml`](pyproject.toml); [`uv.lock`](uv.lock) fixes transitive dependencies.
 
-Install uv using its [official installation guide](https://docs.astral.sh/uv/getting-started/installation/).
-For macOS or Linux:
+Install uv using its [official guide](https://docs.astral.sh/uv/getting-started/installation/).
+On macOS or Linux:
 
 ```sh
 curl -LsSf https://astral.sh/uv/0.12.13/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
-uv --version
-```
-
-From the repository root:
-
-```sh
 uv python install
 uv sync --locked --group dev
 uv run --locked goes-science --help
 ```
 
-`.python-version` selects the tested Python 3.13 patch release. No manual virtual
-environment activation or separate pip installation is required. Offline tests use
-recorded fixtures and do not require GCP credentials. Initial installation needs
-network access to download the interpreter and packages.
+`.python-version` selects the tested **3.13.15** patch. No separate pip installation
+or manual environment activation is needed. Initial installation requires network
+access; offline tests do not require GCP credentials.
 
 ## Configuration
 
-[`.env.example`](.env.example) documents supported environment variables. Create a
-local `.env` only when needed; retain any existing configuration. Settings use the
-`GOES_NATURAL_SCIENCE_KG_` prefix and `__` for nested fields.
+[`.env.example`](.env.example) documents the `GOES_NATURAL_SCIENCE_KG_` prefix and
+nested `__` settings. Preserve existing credentials; local `.env` files are ignored.
+Live generation uses Vertex AI with Application Default Credentials and an explicit
+GCP project. Calls require network access and incur usage charges.
 
-Live ingestion and agent experiments use **Google Cloud Vertex AI** with Application
-Default Credentials and an explicitly configured project. They require network
-access and can incur usage charges. Credentials, downloaded corpus bytes, vectors,
-checkpoints and operational caches are excluded from Git.
+The proposal uses five criterion-specific judges across three Gemini models;
+two judge roles share the generator's model family. This is not independent human
+validation. Generation used temperature 0.2 and recorded responses: cached replay
+is reproducible, fresh remote generation is not guaranteed byte-identical.
 
-Scheduling parameters and objective weights live in
-[`defaults.yaml`](data/processed/curriculum/defaults.yaml) and
-[`inquiry.yaml`](data/processed/curriculum/inquiry.yaml). Minutes are integer values;
-the default budget is **160 hours = 9,600 minutes per grade**, with **0% tolerance**.
+Scheduling settings are recorded beside each snapshot. The 160-hour scenario means
+**160 clock hours, 0% tolerance**, using 32 planning weeks of 300 minutes. It is not a
+verified official timetable. Cognitive targets, context caps and durations are
+provisional design policies. Objective weights and the budget are configurable.
 
 ## Usage
 
-### Build a curriculum
+### Rebuild the final proposal
 
 ```sh
 uv run --locked goes-science build \
-  --skills-map path/to/sequencing-input.json \
+  --skills-map data/processed/proposals/2026-09-17/v5/skills-map.json \
+  --config data/processed/proposals/2026-09-17/v5/settings.json \
   --budget-hours 160 --seed 42
 ```
 
-Input is a graph snapshot or a `sequencing-input/1.0` wrapper containing a finite,
-authored activity bank. A bare graph contributes only its initial-teaching minutes;
-the solver never invents padding. The wrapper supplies practice, retrieval, bridges,
-assessments and contextualized task alternatives.
+Outputs include grade calendars, `graph.jsonld`, `build.json` and generated
+`report.html`. `feasible` means the independent constraint audit passed;
+`optimal` additionally requires an optimality proof. This release is **feasible**.
+Failed builds return exit code 2 and retain diagnostics. No LLM fills missing hours.
 
-A successful build writes to `data/processed/curriculum/`:
+Use `--budget-hours 140 --output data/interim/scenario-140h` to explore a smaller
+budget. Change the recorded objective weights to prioritize inquiry. A bounded
+search may return `unknown`; a weight change does not guarantee a better incumbent.
 
-- `grade_2.json` through `grade_6.json`: schema-validated calendars.
-- `graph.jsonld`: linked graph with lossless typed payloads and evidence references.
-- `report.html`: generated coverage, cognitive/domain balance and schedule audit.
-- `build.json`: solver status, input/settings hashes, objective and bound.
-
-Failed builds return exit code **2**, retain a diagnostic report and archive previous
-calendars outside the active output set. `feasible` is an audited solution;
-`optimal` additionally requires a proof of optimality.
-
-### Run a technical scenario
+### Inspect and extend the pipeline
 
 ```sh
-uv run --locked goes-science build \
-  --skills-map tests/golden/sequencing/engineering.json \
-  --budget-hours 140 --seed 42 \
-  --config data/processed/curriculum/defaults.yaml \
-  --output data/processed/curriculum/examples/140h
-```
-
-Use `--budget-hours 160` for the default budget or `inquiry.yaml` to increase the
-inquiry objective weight. With bounded search, a different weight does not guarantee
-a better incumbent for that criterion. Compare reported metrics and bounds; objective
-values from different weight configurations are not directly comparable.
-
-### Inspect evidence and changes
-
-```sh
-uv run --locked goes-science graph-diff --help
 uv run --locked goes-science corpus-ingest --help
 uv run --locked goes-science corpus-trace --help
+uv run --locked goes-science proposal-prepare --help
+uv run --locked goes-science proposal-generate --help
+uv run --locked goes-science proposal-review --help
+uv run --locked goes-science proposal-publish --help
+uv run --locked goes-science proposal-diff --help
 uv run --locked goes-science orchestrate --help
 uv run --locked goes-science prompts-evaluate --help
-uv run --locked goes-science prompts-followup --help
-uv run --locked goes-science prompts-rescore --help
-uv run --locked goes-science prompts-reviewer-probe --help
 ```
 
-### Confidence estimates
-
-Micro-skill `confidence` written by the generator is a self-report with no calibration
-source and is never published as the estimate. Every orchestration run writes
-`confidence.json` beside `report.json`: for each micro-skill it records the final
-panel signals (vote fraction, mean judge score, supported-claim fraction, revisions,
-hard errors), a raw score and the source of the value (`self_reported`,
-`panel_derived` or `calibrated`). See
-[decision 0012](decisions/0012-confidence-calibration.yaml).
-
-```sh
-uv run --locked goes-science confidence-fit samples.jsonl \
-  --output data/processed/confidence-calibration.json --fitted-at 2026-09-14T00:00:00Z
-uv run --locked goes-science confidence-estimate data/processed/orchestration/report.json \
-  --output data/processed/orchestration --generated-at 2026-09-14T00:00:00Z \
-  --calibration data/processed/confidence-calibration.json
-```
-
-`confidence-fit` needs at least 30 human-reviewed `calibration-sample/1.0` rows with both
-accepted and rejected outcomes; it exits with code **2** otherwise. It fits a monotone
-isotonic mapping and reports Brier score and expected calibration error. No calibration
-record exists yet, so current estimates are uncalibrated panel scores and say so.
+`proposal-prepare` reconstructs textbook assignments from reviewed ingestion plans
+and SHA-verified documents. The published scheduling input includes editorial
+corrections and explicit continuity handoffs; rerunning a generator does not
+reproduce those editorial decisions automatically.
 
 ## Architecture
 
 ```text
-Source discovery → license gate → fetch → parse → normalize → chunk → embed → index
-                                         ↓ evidence anchors
-L0 root → L1 domain teams → L2 decomposition → reviewed skill graph
-                                                   ↓
-                              L3 curricularization → CP-SAT → independent audit
+Discover → license gate → fetch/cache → layout parse → semantic chunks → evidence
+                                                              ↓
+Reviewed unit → skill design → finite activity bank → deterministic checks
+                                      ↑                         ↓
+                                bounded patch ← specialist panel
+                                                              ↓
+                                 editorial review → CP-SAT → independent audit
 ```
 
-Each agent level has specialized judges and at most **three revisions**. Judges emit
-structured verdicts; optimizers rewrite content. Items that do not pass are marked
-`needs_human_review`. Versioned Spanish prompts, typed state, cached requests and
-checkpoints support review and resumption.
+The experimental unit subgraph runs alongside the existing four-level LangGraph
+hierarchy. Dynamic fan-out, explicit reducers, per-unit checkpoints, hashed response
+caches and bounded transport retries support resumption. Every optimization loop
+allows at most three revisions. A separate single-pass editorial verification never
+resets that limit; later edits invalidate its approval for the changed candidate.
 
-Graph nodes represent **context-free skill archetypes**. Context enters only during
-curricularization. Hard constraints enforce exact budgets, prerequisite order,
-joint co-requisite teaching, skill coverage and declared cross-grade continuity.
-Content/cognitive balance, inquiry, spaced retrieval and thematic coherence are
-configurable soft objectives.
+Five judges assess curricular alignment, cognitive demand, graph structure, evidence
+and age appropriateness. Acceptance requires at least four passing votes at 0.8,
+passing evidence and age judgments, and no critical finding. Judges do not rewrite.
+These thresholds are explicit policy, not validated measures of learning quality.
 
-Contextualization is capped at 60% of both time and units, with limits on repetition
-and mandatory variety when used. These caps and cognitive targets are testable design
-policies, not empirically established optimal ratios. See
-[decision 0008](decisions/0008-constraint-curriculum.yaml) for assumptions and limits.
+Graph nodes are **context-free skill archetypes**. Context is injected into selected
+curricular activities only. The solver enforces exact time, declared prerequisites,
+coverage and four adjacent-grade diagnostic handoffs. Large fixed-grade banks receive
+a deterministic finite-bank starting schedule; CP-SAT and the independent audit still
+control acceptance. Context seeds use authored alternatives; a bounded conditional solve then optimizes
+context selection under the same time, count, repetition and variety constraints.
 
 | Path | Responsibility |
 |---|---|
-| `src/goes_natural_science_kg/schemas/` | Pydantic contracts and exported JSON Schemas |
-| `corpus/`, `graph/` | Evidence ingestion, provenance, semantic diffs and interchange |
-| `agents/`, `eval/` | Orchestration, prompt registry, judges, evaluation harness and confidence calibration |
-| `curriculum/` | Constraint model, calendar audit and generated reports |
-| `prompts/`, `decisions/`, `findings.yaml` | Versioned prompts, architecture decisions and research evidence |
+| `src/goes_natural_science_kg/schemas/` | Central Pydantic contracts and exported schemas |
+| `corpus/`, `graph/` | Ingestion, provenance, semantic diffs and interchange |
+| `agents/`, `eval/` | Orchestration, registry, reviews and evaluation |
+| `curriculum/` | Constraint solving, independent audits and artifact generation |
+| `prompts/`, `decisions/`, `findings.yaml` | Versioned prompts, decisions and primary-source research |
 | `tests/` | Unit, integration, property, benchmark and attributed golden fixtures |
 
-Source subdirectories in the table are relative to `src/goes_natural_science_kg/`.
+Package subdirectories above are relative to `src/goes_natural_science_kg/`.
 
-## Data, evidence and licensing
+## Evidence and licensing
 
-The **corpus is reconstructed from manifests**, not committed as a document bundle.
-[`data/manifests/`](data/manifests/) records source URLs, admission decisions,
-licenses or official-publication status, checksums and processing outcomes. The
-pipeline records rejected sources with reasons and continues.
+**Reconstruct the corpus from [`data/manifests/`](data/manifests/).** Manifests record
+URLs, license decisions, source hashes and reviewed segmentation. Rejected sources
+retain a reason and do not stop the pipeline. Official-publication admission is not
+a blanket open-copyright license or a guarantee of scientific correctness.
 
-Official-publication admission is not an open copyright license. Do not assume
-that acceptance permits redistribution. The three cropped PDF test fixtures have
-explicit attribution; full source documents remain in ignored `data/raw/`.
-Semantic chunks preserve document, page, paragraph and offset anchors. A resolving
-citation proves traceability, not that the cited passage entails the generated claim.
+Full PDFs, extracted source text, source-bearing provider requests, embeddings,
+credentials and checkpoints remain ignored. Published bindings retain source IDs,
+URLs, page/paragraph locations, offsets and quote hashes. An exact quotation location
+proves traceability, not semantic entailment. Three attributed cropped PDF fixtures
+are the explicit test-only exception to the document exclusion.
 
-Trackable artifacts include contracts, research, processed outputs, manifests and
-scrubbed recordings of actual provider responses. Local credentials, raw documents,
-intermediate indexes, generated build archives and environment files are ignored.
-Review artifacts before staging: `.gitignore` cannot remove files already tracked.
+The proposal uses MINED textbooks, the second-grade teacher guide and a narrowly
+reviewed NASA background passage. The older international curriculum corpus supports
+alignment. New textbook embeddings were not generated: this release uses reviewed
+unit/page evidence. Retrieval quality needs a separately annotated benchmark before
+embedding changes can be called an improvement.
 
-## Quality and evaluation
+## Evaluation and performance
 
-```sh
-make setup       # uv-managed Python and locked development environment
-make ci          # local full gate: lock consistency, lint, types, offline tests and Bandit
-make security    # dependency advisories; requires network access
-make bench       # benchmark report in reports/benchmark.json
-make build       # source distribution and wheel via uv
-```
+Historical evaluations retain three prompt variants, three replicas, a seven-arm
+model/prompt follow-up and a reviewer-agreement study. No decomposition prompt has
+passed the human-review promotion gate. See
+[`data/processed/prompt-evaluation/`](data/processed/prompt-evaluation/) and
+[decisions 0013–0015](decisions/0015-reviewer-agreement.yaml).
 
-Tests disable Internet sockets and replay recorded provider observations. The prompt
-experiment contains **630 cells** across three replicas; human reference review and
-production prompt promotion remain pending. Results and selection reasons are in
-[`data/processed/prompt-evaluation/report.json`](data/processed/prompt-evaluation/report.json).
+The proposal audit contains **724 actual provider observations**, including failed
+transport experiments. Known list-price estimates total **USD 46.83**; **123 calls
+have unknown cost**, not zero cost. This is not an invoice. Latency is recorded per
+call, separately from solver wall-clock time.
 
-A registered follow-up ([`followup-plan.json`](data/processed/prompt-evaluation/followup-plan.json))
-compared the decomposition role across seven arms on the same forty cases: the historical
-few-shot prompt, an indicator-anchored few-shot prompt, a demonstration-free checklist
-prompt, and the anchored prompt on Gemini 2.5 Flash-Lite, Gemini 3 Flash preview,
-Gemini 2.5 Pro and Gemini 3.1 Pro preview. Every arm reports slices by grade, domain and
-tuning/holdout split and a paired bootstrap interval against the baseline
-([`followup-report.json`](data/processed/prompt-evaluation/followup-report.json),
-[`followup-comparison.csv`](data/processed/prompt-evaluation/followup-comparison.csv)).
+Final schedule generation and its byte-identical repeat are recorded in
+[`solver-measurement.json`](data/processed/proposals/2026-09-17/solver-measurement.json).
+The search reports its objective and bound without claiming optimality. Cognitive
+and content-domain targets that were missed remain visible in the generated report.
 
-| Arm | Model | Final pass | Delta vs baseline (95% CI) | USD |
-|---|---|---:|---|---:|
-| few-shot-flash (baseline) | gemini-2.5-flash | 0.433 | - | 4.25 |
-| anchored-g3-flash | gemini-3-flash-preview | 0.433 | 0.00 (-0.12, +0.12) | 4.59 |
-| anchored-flash | gemini-2.5-flash | 0.392 | -0.04 (-0.15, +0.07) | 4.33 |
-| anchored-g31-pro | gemini-3.1-pro-preview | 0.358 | -0.07 (-0.20, +0.03) | 9.80 |
-| anchored-pro | gemini-2.5-pro | 0.350 | -0.08 (-0.21, +0.03) | 8.07 |
-| checklist-flash | gemini-2.5-flash | 0.292 | -0.14 (-0.26, -0.02) | 5.17 |
-| anchored-flash-lite | gemini-2.5-flash-lite | 0.000 | provider rejected thinking_budget 128 | 0.00 |
+Local validation: **204 tests**, **81% coverage**, strict typing, lint, Bandit,
+dependency audit and package build. All 29 benchmark workloads execute, but the
+20% comparison gate remains **failing**: license-workflow mean +78.1% and the
+small proposal-compilation mean +24.5%. Other runs varied substantially; these
+flags are retained rather than declared resolved. See the
+[regression report](data/processed/benchmarks/proposal-regression-report.txt).
 
-No arm is eligible and nothing is promoted. Prompt method and model tier do not move the
-metric, while task quality changes visibly; the pass rule measures agreement with an
-agent-authored three-item reference under an all-or-nothing prerequisite match. See
-[decision 0013](decisions/0013-decomposition-followup.yaml).
-
-### Where the score actually comes from
-
-Two follow-on studies read the same recorded responses instead of generating new ones.
-
-**Revised scoring** ([decision 0014](decisions/0014-revised-decomposition-score.yaml),
-[`rescore-report.json`](data/processed/prompt-evaluation/rescore-report.json)). The frozen
-scorer maps an unmatched node to a sentinel before comparing prerequisite edges, so one
-disagreement about naming a step destroys every edge touching it. Computing edge metrics
-only between nodes both sides matched, and adding reference-free contract checks, raises the
-pass rate from 0.29-0.43 to 0.62-0.78 across the arms. Edge recall on matched nodes is
-**0.81-0.96**: the reported prerequisite recall of 0.41-0.55 was measuring node naming, not
-dependency correctness. 173 of 208 remaining failures are node matching. The ranking does not
-change, so the conclusion above is robust to the metric.
-
-**Reviewer agreement** ([decision 0015](decisions/0015-reviewer-agreement.yaml),
-[`reviewer-agreement.json`](data/processed/prompt-evaluation/reviewer-agreement.json)). The
-node-matching judgment is made by one model. Re-judging 240 recorded candidates (2,193
-equivalence decisions) with three reviewer models running the identical prompt:
-
-| Reviewer model | Node match | Implied revised pass |
-|---|---:|---:|
-| gemini-3-flash-preview | 0.768 | 0.822 |
-| gemini-2.5-pro (used in the experiments) | 0.704 | 0.742 |
-| gemini-3.1-pro-preview | 0.588 | 0.579 |
-
-Pairwise Cohen's kappa is 0.79-0.87 and three-rater Krippendorff alpha is 0.83, all above the
-0.60 floor of [decision 0011](decisions/0011-evaluation-design.yaml). Substantial per-decision
-agreement still leaves a **24.3-point swing** in the headline score from the choice of
-reviewer alone, against at most 14 points from every prompt and model change combined. A
-kappa threshold is therefore not a sufficient judge gate, every decomposition metric is
-reported conditional on its reviewer model, and human adjudication of the disagreements is
-the next required step.
-
-Local validation on **Python 3.13.15**: **177 tests passed**, **87% coverage** and
-**24 benchmark cases passed**. Lint, strict types, static security checks and the
-source/wheel build pass. No hosted continuous-integration workflow is configured at
-this time; the gate runs locally through `make ci`.
-
-| Benchmark workload | Mean on macOS arm64, Python 3.13.15 |
+| Workload | Mean, macOS arm64 / Python 3.13.15 |
 |---|---:|
-| Three real cropped PDFs, parsed separately | 713.0 / 81.6 / 149.2 ms |
-| Index construction from golden evidence | 7.8 ms |
-| CP-SAT, 205 synthetic activities | 3.131 s (one measured round) |
+| Three real cropped PDFs | 778.5 / 92.2 / 147.0 ms |
+| Golden evidence index | 8.42 ms |
+| Finite-bank starting schedule, 1,194 activities | 38.63 ms |
+| Compile an eight-micro-skill contract fixture | 0.569 ms |
+| Complete final schedule / identical repeat | 63.06 / 62.24 s |
 
-Measurements and runner metadata are in
-[`tests/benchmarks/baseline.json`](tests/benchmarks/baseline.json); prompt variant
-results are in the [comparison table](data/processed/prompt-evaluation/comparison.csv).
-Historical ingestion measurements are retained in
-[`data/processed/benchmarks/corpus-benchmark.json`](data/processed/benchmarks/corpus-benchmark.json).
-Benchmark records identify their Python version and runner. Compare regressions only
-on equivalent workloads, hardware and interpreters. The 20% regression gate
-(`make bench-compare`) requires a matching runner and is not yet automated. A Python
-3.12 baseline is not a valid performance gate for Python 3.13.
+The schema-export workload grew from 81 to 117 contracts and the prompt registry
+from 35 to 50 artifacts. Only those two reference cases were refreshed for their
+changed workloads; the previous baseline is retained. Unchanged-workload references
+remain in the 20% regression gate.
+
+Local benchmark results are retained under [`data/processed/benchmarks/`](data/processed/benchmarks/).
+Compare performance only on matching workloads, hardware and interpreter versions.
+The 20% comparison gate requires a compatible runner; historical Python 3.12 results
+are not a valid Python 3.13 baseline. No hosted CI workflow is currently configured.
 
 ## Development
 
-Use uv for dependency changes and commit `pyproject.toml` and `uv.lock` together.
-Run `uv run --locked pre-commit install` to enable the repository hooks. Changes to
-contracts require explicit version review and regenerated schema exports; artifact
-changes require refreshed checksums. Architecture decisions are schema-validated
-YAML files with linked enforcement tests.
+```sh
+make ci          # locked dependencies, lint, strict types, offline tests and Bandit
+make security    # dependency advisories; requires network access
+make bench       # measured benchmark report
+make build       # source distribution and wheel through uv
+```
 
-[`CLAUDE.md`](CLAUDE.md) defines repository conventions. Code and documentation are
-in English; prompt bodies use Salvadoran Spanish. Keep `.env`, credentials, local
-logs and downloaded documents out of commits.
+Commit dependency changes with `uv.lock`. Contract changes require version review
+and regenerated exports; artifacts require checksum manifests. Tests disable Internet
+sockets. [`CLAUDE.md`](CLAUDE.md) defines conventions. Code and documentation are in
+English; prompt bodies use Salvadoran Spanish. Review staged files before committing:
+`.gitignore` does not remove files already tracked.
 
 ## License
 
-Project code is licensed under [Apache License 2.0](LICENSE); see [NOTICE](NOTICE).
-External source documents and retained evidence remain subject to their own terms.
+Repository code is licensed under [Apache 2.0](LICENSE). Source documents retain
+their own terms; see [NOTICE](NOTICE) and the source manifests.

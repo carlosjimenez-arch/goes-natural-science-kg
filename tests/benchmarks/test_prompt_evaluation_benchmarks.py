@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def test_benchmark_prompt_registry(benchmark):
     registry = benchmark(load_registry, ROOT / "prompts")
+    benchmark.extra_info["prompt_count"] = len(registry.artifacts)
     assert len(registry.artifacts) >= 21
 
 

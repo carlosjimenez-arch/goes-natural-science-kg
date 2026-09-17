@@ -425,6 +425,142 @@ def prompts_reviewer_probe(
     )
 
 
+@app.command("proposal-prepare")
+def proposal_prepare(
+    output: Path = Path("data/interim/curriculum-release/assignments.json"),
+) -> None:
+    """Reconstruct thirty reviewed textbook units from SHA-verified cached PDFs."""
+    from goes_natural_science_kg.corpus.fetch import atomic_bytes
+    from goes_natural_science_kg.corpus.release import prepare_assignments
+
+    assignments = prepare_assignments(
+        (
+            Path("data/manifests/release-ingestion.jsonl"),
+            Path("data/manifests/release-guide-ingestion.jsonl"),
+        ),
+        Path("data/raw"),
+        Path("data/interim/release-evidence"),
+    )
+    atomic_bytes(
+        output, (canonical_json([a.model_dump(mode="json") for a in assignments]) + "\n").encode()
+    )
+    typer.echo(f"Prepared {len(assignments)} evidence-bound units")
+
+
+@app.command("proposal-publish")
+def proposal_publish(
+    results_path: InputPath,
+    output: Path,
+    version: str,
+    settings_path: InputPath | None = None,
+    contexts_path: InputPath = Path("data/processed/curriculum/context-catalog.json"),
+) -> None:
+    """Compile an immutable provisional proposal and solve its finite activity bank."""
+    import json
+
+    from goes_natural_science_kg.curriculum.proposal_artifacts import write_proposal
+    from goes_natural_science_kg.schemas.release import ReleaseUnitResult
+    from goes_natural_science_kg.schemas.sequencing import LocalContext, SequencingSettings
+
+    results = tuple(
+        ReleaseUnitResult.model_validate(r) for r in json.loads(results_path.read_text())
+    )
+    catalog = json.loads(contexts_path.read_text())
+    contexts = tuple(
+        LocalContext.model_validate(c)
+        for c in (catalog if isinstance(catalog, list) else catalog["contexts"])
+    )
+    settings = (
+        SequencingSettings.model_validate_json(settings_path.read_bytes())
+        if settings_path
+        else SequencingSettings(spacing_minutes=600)
+    )
+    report = write_proposal(output, results, contexts, settings, version)
+    typer.echo(
+        f"{report.status}: {len(report.grades)} grade schedules; proposal remains provisional"
+    )
+    if report.hard_errors:
+        raise typer.Exit(2)
+
+
+@app.command("proposal-review")
+def proposal_review(
+    results_path: InputPath,
+    settings_path: InputPath,
+    output: Path = Path("data/interim/editorial-verification"),
+    online: bool = False,
+) -> None:
+    """Perform one scoped verification of an editorial proposal; no optimizer loop is restarted."""
+    import asyncio
+    import json
+
+    from goes_natural_science_kg.agents.release_review import review_proposals
+    from goes_natural_science_kg.corpus.fetch import atomic_bytes
+    from goes_natural_science_kg.schemas.release import ReleaseSettings, ReleaseUnitResult
+
+    results = tuple(
+        ReleaseUnitResult.model_validate(r) for r in json.loads(results_path.read_text())
+    )
+    settings = ReleaseSettings.model_validate_json(settings_path.read_bytes())
+    reviews = asyncio.run(review_proposals(results, settings, output, online=online))
+    atomic_bytes(
+        output / "reviews.json",
+        (canonical_json([r.model_dump(mode="json") for r in reviews]) + "\n").encode(),
+    )
+    typer.echo(
+        f"Verified {len(reviews)} proposals once; {sum(r.panel.accepted for r in reviews)} pass the model panel. Human validation remains pending."
+    )
+
+
+@app.command("proposal-diff")
+def proposal_diff_command(before: InputPath, after: InputPath, output: Path) -> None:
+    """Write a semantic node/edge diff between evidence-ready graph snapshots."""
+    from goes_natural_science_kg.corpus.fetch import atomic_bytes
+    from goes_natural_science_kg.curriculum.release import proposal_diff
+    from goes_natural_science_kg.schemas.graph import EvidenceGraphSnapshot
+
+    diff = proposal_diff(
+        EvidenceGraphSnapshot.model_validate_json(before.read_bytes()),
+        EvidenceGraphSnapshot.model_validate_json(after.read_bytes()),
+    )
+    atomic_bytes(output, (canonical_json(diff) + "\n").encode())
+    typer.echo(f"{len(diff.changes)} semantic entity changes")
+
+
+@app.command("proposal-generate")
+def proposal_generate(
+    assignments_path: InputPath,
+    settings_path: InputPath,
+    contexts_path: InputPath = Path("data/processed/curriculum/context-catalog.json"),
+    output: Path = Path("data/interim/curriculum-release"),
+    online: bool = False,
+) -> None:
+    """Generate or resume evidence-bound proposal units; external calls require --online."""
+    import asyncio
+    import json
+
+    from goes_natural_science_kg.agents.release import run_release
+    from goes_natural_science_kg.corpus.fetch import atomic_bytes
+    from goes_natural_science_kg.schemas.release import ReleaseSettings, UnitAssignment
+
+    assignments = tuple(
+        UnitAssignment.model_validate(a) for a in json.loads(assignments_path.read_text())
+    )
+    settings = ReleaseSettings.model_validate_json(settings_path.read_bytes())
+    catalog = json.loads(contexts_path.read_text())
+    contexts = tuple(catalog if isinstance(catalog, list) else catalog["contexts"])
+    results = asyncio.run(
+        run_release(assignments, settings, contexts, output, output / "responses", online)
+    )
+    atomic_bytes(
+        output / "results.json",
+        (canonical_json([r.model_dump(mode="json") for r in results]) + "\n").encode(),
+    )
+    typer.echo(
+        f"{len(results)} units; {sum(r.status == 'panel_passed' for r in results)} pass the model panel; human validation remains pending"
+    )
+
+
 @app.command("build")
 def build_curriculum(
     skills_map: Annotated[Path, typer.Option(exists=True, dir_okay=False)],

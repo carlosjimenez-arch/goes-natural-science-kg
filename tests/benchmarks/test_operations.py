@@ -83,4 +83,5 @@ def test_gate_workflow(benchmark, tmp_path):
 
 
 def test_schema_exports(benchmark):
+    benchmark.extra_info["schema_count"] = len(schema_exports())
     benchmark(schema_exports)

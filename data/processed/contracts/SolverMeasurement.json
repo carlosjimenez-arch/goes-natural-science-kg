@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"elapsed_seconds":{"title":"Elapsed Seconds","type":"number"},"status":{"minLength":1,"title":"Status","type":"string"}},"required":["elapsed_seconds","status"],"title":"SolverMeasurement","type":"object"}

@@ -33,7 +33,7 @@ MODEL_LIST_PRICES: dict[str, tuple[float, float, float]] = {
 }
 
 
-async def evaluate_request(
+async def evaluate_request(  # noqa: C901 - provider transport, deterministic cache and failure accounting
     client: genai.Client | None,
     limiter: asyncio.Semaphore,
     cache: Path,
@@ -49,6 +49,9 @@ async def evaluate_request(
     *,
     prompt_version: str = "1.0.0",
     location: str | None = None,
+    json_mode: bool = False,
+    schema_override: dict[str, Any] | None = None,
+    retry_attempt: int = 0,
 ) -> EvaluationObservation:
     if location is None:
         # Only the historical single-location experiment omits it; every plan names it.
@@ -73,6 +76,12 @@ async def evaluate_request(
         "cache_version": "prompt-experiment/1.0",
         "location": location,
     }
+    if json_mode:
+        request["output_mode"] = "json-with-local-contract-validation/1.0"
+    if schema_override is not None:
+        request["transport_schema"] = schema_override
+    if retry_attempt:
+        request["retry_attempt"] = retry_attempt
     key = content_hash(request)
     async with request_locks.setdefault(key, asyncio.Lock()):
         path = cache / (key + ".json")
@@ -99,7 +108,13 @@ async def evaluate_request(
                             thinking_budget=settings.thinking_budget
                         ),
                         response_mime_type="application/json",
-                        response_json_schema=contract.model_json_schema(),
+                        response_json_schema=(
+                            None
+                            if json_mode
+                            else schema_override
+                            if schema_override is not None
+                            else contract.model_json_schema()
+                        ),
                         max_output_tokens=32768,
                         automatic_function_calling=types.AutomaticFunctionCallingConfig(
                             disable=True

@@ -43,9 +43,17 @@ def build_index(path: Path, chunks: tuple[EvidenceChunk, ...], vectors: NDArray[
     )
     # Immutable generation, published by an atomic pointer only after both writes.
     generation = path / digest
-    atomic_bytes(generation / "chunks.jsonl", content)
-    atomic_bytes(generation / "vectors.npy", data)
-    atomic_bytes(path / "current.json", (canonical_json({"generation": digest}) + "\n").encode())
+    for target, payload in (
+        (generation / "chunks.jsonl", content),
+        (generation / "vectors.npy", data),
+        (path / "current.json", (canonical_json({"generation": digest}) + "\n").encode()),
+    ):
+        try:
+            unchanged = target.read_bytes() == payload
+        except FileNotFoundError:
+            unchanged = False
+        if not unchanged:
+            atomic_bytes(target, payload)
     return digest
 
 

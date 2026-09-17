@@ -64,7 +64,7 @@ class DiscoveryRecord(Contract):
     document: SourceDocument
     discovered_at: AwareDatetime
     discovery_url: SourceUrl
-    role: Literal["national_curriculum", "international_comparator"]
+    role: Literal["national_curriculum", "international_comparator", "official_teaching_resource"]
     framework: Text | None = None
     applicability_evidence: Text
     sections: tuple[SectionPlan, ...] = ()

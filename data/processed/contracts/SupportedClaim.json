@@ -1,0 +1,1 @@
+{"additionalProperties":false,"properties":{"anchor_key":{"minLength":1,"title":"Anchor Key","type":"string"},"claim":{"minLength":1,"title":"Claim","type":"string"},"quote":{"maxLength":240,"minLength":8,"title":"Quote","type":"string"}},"required":["anchor_key","quote","claim"],"title":"SupportedClaim","type":"object"}
