@@ -133,3 +133,42 @@ def test_identical_concurrent_requests_share_one_recorded_provider_call(tmp_path
     assert len(calls) == 1
     assert {r.response_sha256 for r in results} == {record.response_sha256}
     assert len(list(tmp_path.glob("*.json"))) == 1
+
+
+def test_recorded_followup_arms_replay_and_report_byte_identically(tmp_path):
+    from goes_natural_science_kg.eval.harness import run_followup
+    from goes_natural_science_kg.eval.reporting import make_followup_report
+    from goes_natural_science_kg.schemas.base import canonical_json
+    from goes_natural_science_kg.schemas.prompt_evaluation import FollowUpPlan, FollowUpReport
+
+    folder = ROOT / "data/processed/prompt-evaluation"
+    cases = ROOT / "tests/golden/prompt-evaluation/cases.jsonl"
+    plan = FollowUpPlan.model_validate_json((folder / "followup-plan.json").read_bytes())
+    asyncio.run(
+        run_followup(plan, cases, ROOT / "prompts", folder / "observations", tmp_path, online=False)
+    )
+    expected = sorted((folder / "followup-cells").glob("*.json"))
+    assert len(expected) == len(plan.arms) * plan.replicates * 10 == 210
+    for path in expected:
+        assert (tmp_path / path.name).read_bytes() == path.read_bytes()
+    report = make_followup_report(
+        plan, cases, tmp_path, folder / "observations", registry=load_registry(ROOT / "prompts")
+    )
+    assert canonical_json(report) + "\n" == (folder / "followup-report.json").read_text()
+    stored = FollowUpReport.model_validate_json((folder / "followup-report.json").read_bytes())
+    # Declared rule: no arm reached the 0.80 pass threshold, so nothing is selected.
+    assert stored.complete and stored.provisional_choice is None
+    assert stored.production_choice is None
+    assert all(not a.summary.eligible for a in stored.arms)
+    baseline = next(a for a in stored.arms if a.arm.key == plan.baseline_arm)
+    assert baseline.comparison is None
+    # Every non-baseline arm carries a paired bootstrap interval; none excludes zero upward.
+    for arm in stored.arms:
+        if arm.arm.key != plan.baseline_arm:
+            assert arm.comparison is not None and not arm.comparison.improves
+    # Flash-lite failed on a provider constraint and is recorded, not hidden.
+    lite = next(a for a in stored.arms if a.arm.generator_model == "gemini-2.5-flash-lite")
+    assert (
+        lite.summary.schema_rate == 0.0
+        and "incomplete provider usage" in lite.summary.rejection_reasons
+    )

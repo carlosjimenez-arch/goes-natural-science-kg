@@ -303,3 +303,132 @@ class EvaluationReport(Contract):
         if any(self.production_choices.values()) and (not self.complete or not self.human_reviewed):
             raise ValueError("production promotion requires complete measurements and human review")
         return self
+
+
+# --- Follow-up experiments: parametrized arms over prompt versions and generator models ---
+
+GeneratorModel = Literal[
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+    "gemini-2.5-flash-lite",
+    "gemini-3-flash-preview",
+    "gemini-3.1-pro-preview",
+]
+VertexLocation = Literal["us-central1", "global"]
+SliceDimension = Literal["grade", "domain", "split"]
+
+
+class PromptVariantRef(Contract):
+    prompt_id: Slug
+    version: Annotated[str, Field(pattern=r"^\d+\.\d+\.\d+$")] = "1.0.0"
+
+
+class ExperimentArm(Contract):
+    key: Slug
+    prompt: PromptVariantRef
+    generator_model: GeneratorModel = "gemini-2.5-flash"
+    location: VertexLocation = "us-central1"
+
+
+class FollowUpPlan(Contract):
+    """A registered comparison of prompt/model arms on the same forty held-out cases."""
+
+    schema_version: Literal["prompt-followup/1.0"] = "prompt-followup/1.0"
+    name: Slug
+    role: Literal["decomposition", "curricularization"]
+    project: Text
+    judge_model: Literal["gemini-2.5-pro"] = "gemini-2.5-pro"
+    judge_location: VertexLocation = "us-central1"
+    replicates: Literal[3] = 3
+    batch_size: Annotated[int, Field(ge=1, le=8)] = 4
+    concurrency: Annotated[int, Field(ge=1, le=16)] = 8
+    temperature: float = 0.2
+    thinking_budget: int = 128
+    max_revisions: Literal[3] = 3
+    coverage_threshold: Annotated[float, Field(ge=0.8, le=0.8)] = 0.8
+    seed: int = 0
+    arms: Annotated[tuple[ExperimentArm, ...], Field(min_length=2)]
+    baseline_arm: Slug
+    tuning_case_ids: tuple[Text, ...] = ()
+    bootstrap_resamples: Annotated[int, Field(ge=200, le=20000)] = 2000
+
+    @model_validator(mode="after")
+    def arms_are_unique(self) -> Self:
+        keys = [a.key for a in self.arms]
+        if len(keys) != len(set(keys)):
+            raise ValueError("duplicate arm key")
+        if self.baseline_arm not in keys:
+            raise ValueError("baseline arm must be one of the arms")
+        if len(set(self.tuning_case_ids)) != len(self.tuning_case_ids):
+            raise ValueError("duplicate tuning case id")
+        return self
+
+
+class CellSpec(Contract):
+    role: Text
+    technique: Technique
+    prompt: PromptVariantRef
+    generator_model: Text
+    generator_location: Text
+    judge_model: Text
+    judge_location: Text
+
+
+class FollowUpCell(EvaluationCell):
+    schema_version: Literal["evaluation-cell/2.0"] = "evaluation-cell/2.0"  # type: ignore[assignment]
+    arm: Slug
+    spec: CellSpec
+    plan_sha256: Digest
+
+
+class SliceRow(Contract):
+    dimension: SliceDimension
+    key: Text
+    cases: Annotated[int, Field(strict=True, ge=1)]
+    case_replicates: Annotated[int, Field(strict=True, ge=1)]
+    final_pass_rate: float
+    coverage: float | None
+    prerequisite_recall: float | None
+    unsupported_claim_rate: float | None
+    insufficient: bool
+
+
+class ArmComparison(Contract):
+    arm: Slug
+    baseline: Slug
+    final_pass_delta: float
+    delta_ci_low: float
+    delta_ci_high: float
+    bootstrap_resamples: int
+    improves: bool
+
+
+class ArmSummary(Contract):
+    arm: ExperimentArm
+    summary: VariantSummary
+    slices: tuple[SliceRow, ...]
+    worst_slice: SliceRow | None
+    comparison: ArmComparison | None
+    usd_per_passed_case: float | None
+
+
+class FollowUpReport(Contract):
+    schema_version: Literal["prompt-followup-report/1.0"] = "prompt-followup-report/1.0"
+    plan_sha256: Digest
+    dataset_sha256: Digest
+    complete: bool
+    human_reviewed: bool
+    estimated_total_usd: float
+    missing_usage_requests: int
+    provider_requests: int
+    arms: tuple[ArmSummary, ...]
+    ranking: tuple[Slug, ...]
+    provisional_choice: Slug | None
+    production_choice: Slug | None
+    limitations: tuple[Text, ...]
+
+    @model_validator(mode="after")
+    def promotion_requires_review(self) -> Self:
+        if self.production_choice is not None and (not self.complete or not self.human_reviewed):
+            raise ValueError("production promotion requires complete measurements and human review")
+        return self

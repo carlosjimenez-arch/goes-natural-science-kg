@@ -9,14 +9,28 @@ from typing import Any
 
 from goes_natural_science_kg.eval.cases import ROLES, load_cases
 from goes_natural_science_kg.eval.experiment import read_observation
-from goes_natural_science_kg.eval.harness import cell_identity, validate_cell_prompts
+from goes_natural_science_kg.eval.harness import (
+    arm_spec,
+    cell_identity,
+    evaluation_cases,
+    followup_cell_identity,
+    validate_cell_prompts,
+)
 from goes_natural_science_kg.schemas.base import content_hash
 from goes_natural_science_kg.schemas.prompt_evaluation import (
+    AnnotatedCase,
+    ArmComparison,
+    ArmSummary,
     EvaluationCell,
+    EvaluationMetric,
     EvaluationReport,
     ExperimentSettings,
+    FollowUpCell,
+    FollowUpPlan,
+    FollowUpReport,
     PromptRegistry,
     ReplicateSummary,
+    SliceRow,
     VariantSummary,
 )
 
@@ -226,4 +240,191 @@ def summarize_replicate(
         missing_usage_requests=sum(r.estimated_usd is None for r in records),
         mean_request_seconds=mean(r.latency_seconds for r in records),
         provider_requests=len(records),
+    )
+
+
+def slice_rows(
+    final: list[EvaluationMetric],
+    cases: dict[str, AnnotatedCase],
+    tuning: set[str],
+) -> tuple[SliceRow, ...]:
+    """Per-slice rates over final metrics; fewer than fifteen distinct cases is flagged."""
+
+    def key_of(dimension: str, case: AnnotatedCase) -> str:
+        if dimension == "grade":
+            return str(case.skill.suggested_grade)
+        if dimension == "domain":
+            return case.skill.domain.value
+        return "tuning" if case.id in tuning else "holdout"
+
+    rows = []
+    for dimension in ("grade", "domain", "split"):
+        groups: dict[str, list[EvaluationMetric]] = {}
+        for metric in final:
+            groups.setdefault(key_of(dimension, cases[metric.case_id]), []).append(metric)
+        for key, items in sorted(groups.items()):
+            distinct = len({m.case_id for m in items})
+            rows.append(
+                SliceRow(
+                    dimension=dimension,
+                    key=key,
+                    cases=distinct,
+                    case_replicates=len(items),
+                    final_pass_rate=mean(m.passed for m in items),
+                    coverage=average([m.coverage for m in items]),
+                    prerequisite_recall=average([m.prerequisite_recall for m in items]),
+                    unsupported_claim_rate=average([m.unsupported_claim_rate for m in items]),
+                    insufficient=distinct < 15,
+                )
+            )
+    return tuple(rows)
+
+
+def paired_bootstrap(
+    arm_final: list[EvaluationMetric],
+    base_final: list[EvaluationMetric],
+    *,
+    resamples: int,
+    seed: int,
+) -> tuple[float, float, float]:
+    """Case-level paired bootstrap of the difference in final pass rate (arm minus baseline)."""
+    import numpy as np
+
+    def per_case(items: list[EvaluationMetric]) -> dict[str, float]:
+        groups: dict[str, list[bool]] = {}
+        for m in items:
+            groups.setdefault(m.case_id, []).append(m.passed)
+        return {k: mean(v) for k, v in groups.items()}
+
+    a, b = per_case(arm_final), per_case(base_final)
+    keys = sorted(set(a) & set(b))
+    if not keys:
+        raise ValueError("no shared cases between arm and baseline")
+    diffs = np.array([a[k] - b[k] for k in keys], dtype=np.float64)
+    rng = np.random.default_rng(seed)
+    samples = rng.choice(diffs, size=(resamples, len(diffs)), replace=True).mean(axis=1)
+    low, high = np.percentile(samples, [2.5, 97.5])
+    return float(diffs.mean()), float(low), float(high)
+
+
+def make_followup_report(
+    plan: FollowUpPlan,
+    cases_path: Path,
+    cells_path: Path,
+    observations: Path,
+    *,
+    registry: PromptRegistry,
+) -> FollowUpReport:
+    evaluation = evaluation_cases(cases_path)
+    cases = {c.id: c for c in load_cases(cases_path)}
+    plan_sha256 = content_hash(plan)
+    cells = [
+        FollowUpCell.model_validate_json(p.read_bytes()) for p in sorted(cells_path.glob("*.json"))
+    ]
+    arms = {a.key: a for a in plan.arms}
+    seen = set()
+    for cell in cells:
+        if cell.plan_sha256 != plan_sha256 or cell.arm not in arms:
+            raise ValueError("cell belongs to a different plan or arm")
+        arm = arms[cell.arm]
+        expected = followup_cell_identity(
+            tuple(cases[k] for k in cell.case_ids), registry, plan, arm, cell.replicate
+        )
+        if expected != cell.id or cell.spec != arm_spec(plan, arm, registry):
+            raise ValueError("dataset, plan or prompt differs from measured cell")
+        validate_cell_prompts(cell, registry, observations)
+        for key in cell.case_ids:
+            identity = (cell.arm, cell.replicate, key)
+            if key not in {c.id for c in evaluation} or identity in seen:
+                raise ValueError("unknown or duplicate evaluation case")
+            seen.add(identity)
+    expected_cells = len(plan.arms) * plan.replicates * -(-len(evaluation) // plan.batch_size)
+    complete = len(cells) == expected_cells
+
+    def finals(arm_cells: list[FollowUpCell]) -> list[EvaluationMetric]:
+        return [
+            next(m for m in reversed(c.metrics) if m.case_id == key)
+            for c in arm_cells
+            for key in c.case_ids
+        ]
+
+    by_arm = {a.key: [c for c in cells if c.arm == a.key] for a in plan.arms}
+    baseline_final = finals(by_arm[plan.baseline_arm])
+    tuning = set(plan.tuning_case_ids)
+    summaries = []
+    for arm in plan.arms:
+        arm_cells = by_arm[arm.key]
+        if not arm_cells:
+            continue
+        summary = summarize_variant(list(arm_cells), observations)
+        final = finals(arm_cells)
+        rows = slice_rows(final, cases, tuning)
+        graded = [r for r in rows if r.dimension == "grade"]
+        comparison = None
+        if arm.key != plan.baseline_arm and baseline_final:
+            delta, low, high = paired_bootstrap(
+                final, baseline_final, resamples=plan.bootstrap_resamples, seed=plan.seed
+            )
+            comparison = ArmComparison(
+                arm=arm.key,
+                baseline=plan.baseline_arm,
+                final_pass_delta=delta,
+                delta_ci_low=low,
+                delta_ci_high=high,
+                bootstrap_resamples=plan.bootstrap_resamples,
+                improves=low > 0,
+            )
+        passed = sum(m.passed for m in final)
+        summaries.append(
+            ArmSummary(
+                arm=arm,
+                summary=summary,
+                slices=rows,
+                worst_slice=min(graded, key=lambda r: (r.final_pass_rate, r.key))
+                if graded
+                else None,
+                comparison=comparison,
+                usd_per_passed_case=summary.estimated_usd / passed if passed else None,
+            )
+        )
+    eligible = [s for s in summaries if s.summary.eligible and complete]
+    ranking = tuple(
+        s.arm.key
+        for s in sorted(
+            eligible,
+            key=lambda s: (
+                -s.summary.final_pass_rate,
+                -s.summary.initial_pass_rate,
+                s.summary.estimated_usd,
+                s.summary.mean_request_seconds,
+                s.arm.key,
+            ),
+        )
+    )
+    records = [
+        read_observation(observations, h)
+        for h in sorted({h for c in cells for h in c.observations})
+    ]
+    human = all(c.annotation_status == "human_reviewed" for c in cases.values())
+    return FollowUpReport(
+        plan_sha256=plan_sha256,
+        dataset_sha256=content_hash([c.model_dump(mode="json") for c in cases.values()]),
+        complete=complete,
+        human_reviewed=human,
+        estimated_total_usd=sum(r.estimated_usd for r in records if r.estimated_usd is not None),
+        missing_usage_requests=sum(r.estimated_usd is None for r in records),
+        provider_requests=len(records),
+        arms=tuple(summaries),
+        ranking=ranking,
+        provisional_choice=ranking[0] if ranking else None,
+        production_choice=None,
+        limitations=(
+            "Reference annotations and few-shot demonstrations are agent-authored, pending independent teacher review; a pass measures agreement with that draft reference.",
+            "Semantic equivalence and source support are judged by gemini-2.5-pro plus exact quote checks, not by humans.",
+            "Grade and domain slices hold fewer than fifteen distinct cases and are flagged insufficient; read them as diagnostics, not evidence.",
+            "The forty cases were already used by the first experiment; tuning/holdout split labels which half informed prompt drafting.",
+            "Paired bootstrap intervals assume cases are exchangeable; cases within a provider batch are correlated.",
+            "Costs use recorded token usage and published USD list prices, including preview models; not an invoice.",
+            "Requests that are byte-identical to the first experiment reuse its recorded observations at zero marginal cost.",
+        ),
     )

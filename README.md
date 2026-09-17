@@ -37,7 +37,7 @@ checks does not establish instructional quality or scientific validity.
 | Research and contracts | Primary-source findings, typed schemas, stable IDs and semantic graph diffs | AND/OR prerequisite routes remain a proposed extension |
 | Corpus | License gate, PDF extraction, semantic chunks, embeddings and traceable index | Eight accepted national documents per grade across six countries; TIMSS/NGSS corpus admission remains unresolved |
 | Agent hierarchy | Four LangGraph levels, specialized judges, bounded revisions, checkpoints and caches | Rejected items require human review |
-| Prompt evaluation | Three variants per critical role, three replicas, recorded provider responses and offline replay | Reference cases are agent-authored; decomposition has no eligible variant |
+| Prompt evaluation | Three variants per critical role, three replicas, recorded provider responses, offline replay and a seven-arm decomposition follow-up across prompts and five Gemini models | Reference cases are agent-authored; no decomposition prompt or model reaches the 0.80 pass threshold, and the metric itself is the measured bottleneck |
 | Curricularization | CP-SAT scheduling, independent audit, JSON-LD and generated HTML reports | The provisional graph supplies only 640 of the required 9,600 minutes per grade |
 
 The solver rejects that incomplete input. The schedules in
@@ -139,6 +139,7 @@ uv run --locked goes-science corpus-ingest --help
 uv run --locked goes-science corpus-trace --help
 uv run --locked goes-science orchestrate --help
 uv run --locked goes-science prompts-evaluate --help
+uv run --locked goes-science prompts-followup --help
 ```
 
 ### Confidence estimates
@@ -234,7 +235,32 @@ experiment contains **630 cells** across three replicas; human reference review 
 production prompt promotion remain pending. Results and selection reasons are in
 [`data/processed/prompt-evaluation/report.json`](data/processed/prompt-evaluation/report.json).
 
-Local validation on **Python 3.13.15**: **159 tests passed**, **86% coverage** and
+A registered follow-up ([`followup-plan.json`](data/processed/prompt-evaluation/followup-plan.json))
+compared the decomposition role across seven arms on the same forty cases: the historical
+few-shot prompt, an indicator-anchored few-shot prompt, a demonstration-free checklist
+prompt, and the anchored prompt on Gemini 2.5 Flash-Lite, Gemini 3 Flash preview,
+Gemini 2.5 Pro and Gemini 3.1 Pro preview. Every arm reports slices by grade, domain and
+tuning/holdout split and a paired bootstrap interval against the baseline
+([`followup-report.json`](data/processed/prompt-evaluation/followup-report.json),
+[`followup-comparison.csv`](data/processed/prompt-evaluation/followup-comparison.csv)).
+
+| Arm | Model | Final pass | Delta vs baseline (95% CI) | USD |
+|---|---|---:|---|---:|
+| few-shot-flash (baseline) | gemini-2.5-flash | 0.433 | - | 4.25 |
+| anchored-g3-flash | gemini-3-flash-preview | 0.433 | 0.00 (-0.12, +0.12) | 4.59 |
+| anchored-flash | gemini-2.5-flash | 0.392 | -0.04 (-0.15, +0.07) | 4.33 |
+| anchored-g31-pro | gemini-3.1-pro-preview | 0.358 | -0.07 (-0.20, +0.03) | 9.80 |
+| anchored-pro | gemini-2.5-pro | 0.350 | -0.08 (-0.21, +0.03) | 8.07 |
+| checklist-flash | gemini-2.5-flash | 0.292 | -0.14 (-0.26, -0.02) | 5.17 |
+| anchored-flash-lite | gemini-2.5-flash-lite | 0.000 | provider rejected thinking_budget 128 | 0.00 |
+
+No arm is eligible and nothing is promoted. Prompt method and model tier do not move the
+metric, while task quality changes visibly; the pass rule measures agreement with an
+agent-authored three-item reference under an all-or-nothing prerequisite match. See
+[decision 0013](decisions/0013-decomposition-followup.yaml) for the analysis and next steps
+(human reference annotation and metric revision, decisions 0010 and 0011).
+
+Local validation on **Python 3.13.15**: **164 tests passed**, **86% coverage** and
 **22 benchmark cases passed**. Lint, strict types, static security checks and the
 source/wheel build pass. No hosted continuous-integration workflow is configured at
 this time; the gate runs locally through `make ci`.

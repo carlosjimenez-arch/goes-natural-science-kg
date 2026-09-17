@@ -1,0 +1,122 @@
+schema_version: architecture-decision/1.0
+id: '0013'
+title: 'Decomposition follow-up: indicator-anchored prompts and five generator models measured against the draft reference'
+status: accepted
+date: '2026-09-14'
+supersedes: null
+invariants:
+- 1
+- 2
+- 3
+- 4
+- 8
+context: |
+  Decision 0007 left the decomposition role without an eligible prompt variant: the best
+  first-experiment variant (few_shot on gemini-2.5-flash) reached a final pass rate of 0.43
+  against the 0.80 threshold. Failure analysis on the recorded cells showed that candidates
+  were pedagogically reasonable three-step progressions, and that a pass requires
+  reproducing all three reference micro-skills (coverage >= 0.8 with three items means
+  three of three matched) plus every reference prerequisite edge, judged for semantic
+  equivalence by gemini-2.5-pro. The reference is agent-authored and every case has exactly
+  three items in a knowing -> applying -> reasoning chain. The historical prompt also asked
+  for a 6x diagnostic target, in tension with that reference.
+
+  A prompt engineer with El Salvador curriculum knowledge (MINED 2026 Ciencia y Tecnologia
+  programme: contenidos procedimentales and indicadores de logro) drafted two variants after
+  reading three failed cases (biotic-abiotic, balance, day-night); those three are declared
+  as the tuning split. The harness was generalized (FollowUpPlan, run_followup,
+  make_followup_report) so that arms vary prompt id/version, generator model and Vertex
+  location while the historical experiment replays byte-identically. Vertex access used the
+  maintainer's gcloud account token because Application Default Credentials required
+  re-authentication; no credential was persisted.
+options:
+- name: decomposition-anchored-few-shot (indicator-anchored method plus the six historical demonstrations)
+  pros:
+  - Explicit method - read the indicator verb and object, three-step progression, supplied
+    material and measurable criterion, stay within the fragment, pre-answer checklist.
+  cons:
+  - The six demonstrations dominate the output form - 100% of tasks on flash and Gemini 3
+    Flash repeat the demonstration boilerplate sentence and 100% copy confidence 0.7.
+- name: decomposition-checklist-structured (same method, no demonstrations)
+  pros:
+  - Tasks become classroom-usable - concrete material, teacher voice, measurable mastery
+    criterion, indicator quoted in the rationale, confidence not copied.
+  cons:
+  - 76% of initial outputs omit prerequisite edges, so prerequisite recall collapses and the
+    pass rate falls to 0.29.
+- name: Generator model change with the anchored prompt (flash-lite, Gemini 3 Flash preview, 2.5 Pro, 3.1 Pro preview)
+  pros:
+  - Tests whether capability tier moves the metric at all.
+  cons:
+  - Pro-tier models cost 1.9-2.3x per arm and score lower; flash-lite rejected the frozen
+    thinking_budget of 128 (minimum 512) and produced no valid output.
+- name: Keep the historical few_shot prompt as baseline (chosen as the reference point)
+  pros:
+  - Byte-identical requests reuse recorded observations at zero marginal cost.
+  cons:
+  - Remains ineligible at 0.43.
+criteria:
+- Same forty held-out cases, same paired batches and seeds as decision 0006.
+- Eligibility and ranking rules of decision 0006, unchanged and declared before running.
+- Paired case-level bootstrap (2000 resamples, seed 0) of the final pass-rate difference
+  against the baseline arm; an arm improves only if the 95% interval excludes zero upward.
+- Slices by grade, domain and tuning/holdout split, with slices under fifteen cases flagged.
+decision: |
+  No decomposition variant or model is promoted; the provisional choice for the role remains
+  None. Measured final pass rates (three replicates, forty cases): few-shot-flash 0.433
+  (baseline), anchored-g3-flash 0.433 (delta 0.00, CI -0.12..+0.12), anchored-flash 0.392
+  (-0.04, CI -0.15..+0.07), anchored-g31-pro 0.358 (-0.07, CI -0.20..+0.03), anchored-pro
+  0.350 (-0.08, CI -0.21..+0.03), checklist-flash 0.292 (-0.14, CI -0.26..-0.02),
+  anchored-flash-lite 0.000 (provider rejected thinking_budget=128). Coverage moved between
+  0.67 and 0.75 and prerequisite recall between 0.41 and 0.55 across every working arm.
+
+  Interpretation, stated as the finding of this decision: neither prompt method nor model
+  tier moves the metric, while the qualitative quality of the tasks changes visibly. The
+  bottleneck is the evaluation target, not generation. A pass measures agreement with one
+  agent-authored three-item decomposition under a strict all-or-nothing rule, and the
+  reference reviewer marks reasonable alternatives (identify Sun and Earth versus identify
+  the lit and unlit sides) as non-equivalent. Further prompt tuning against this reference
+  would optimize imitation of the draft annotator, not decomposition quality.
+
+  Consequently the next investment is the one ordered by decisions 0010 and 0011: human
+  reference annotation with inter-annotator agreement, a graded coverage metric instead of
+  all-or-nothing, prerequisite metrics computed on matched pairs, and human validation of
+  the reference reviewer. Gemini 3 Flash preview is recorded as cost-equivalent to 2.5 Flash
+  on this task (USD 4.59 versus 4.25 per arm) with the same pass rate; Pro-tier models are
+  not justified for decomposition on this evidence.
+consequences:
+- The historical experiment (decision 0007) is untouched; its 630 cells and report replay
+  byte-identically after the harness generalization.
+- Follow-up artifacts are committed under data/processed/prompt-evaluation - followup-plan.json,
+  followup-cells (210 evaluation-cell/2.0), followup-report.json, followup-comparison.csv and
+  1302 new compressed observations in observations/. Total estimated list-price cost USD 36.22,
+  of which USD 4.25 was reused from the first experiment; 120 flash-lite requests have no usage.
+- Template leakage is quantified - the six demonstrations impose sentence templates and the
+  literal confidence 0.7 on 100% of flash outputs and 63% of Gemini 3.1 Pro outputs; this is
+  further evidence for decision 0012 that self-reported confidence is not a measurement.
+- Judge validation in the first experiment used synthetic negatives that are trivially
+  detectable (campaign finance law, nonlinear differential equations, the Moon producing its
+  own sunlight); the reported 0.97-1.00 judge accuracies do not validate the judges. Decision
+  0011 judge validation with human labels remains required before any judge is trusted.
+- A flash-lite arm requires a plan with thinking_budget >= 512; the frozen plan is kept as
+  measured so the provider constraint stays visible.
+- Grade and domain slices hold five to eight distinct cases each and are flagged insufficient;
+  the worst grade slice is reported per arm (grade 3 for the baseline at 0.33) as a diagnostic.
+enforced_by:
+- tests/integration/test_prompt_evaluation_replay.py::test_recorded_followup_arms_replay_and_report_byte_identically
+- tests/integration/test_prompt_evaluation_replay.py::test_complete_recorded_experiment_and_report_replay
+- tests/unit/test_followup.py::test_every_generator_model_has_a_list_price_and_legacy_rates_are_unchanged
+- tests/unit/test_followup.py::test_followup_plan_requires_baseline_and_unique_arms
+- tests/unit/test_followup.py::test_slice_rows_expose_grade_domain_and_split_with_insufficient_flags
+- tests/unit/test_followup.py::test_paired_bootstrap_separates_real_improvement_from_noise
+profile_tradeoffs:
+  curriculum_designer: The checklist variant produced the tasks a Salvadoran teacher could
+    read aloud - material, criterion, indicator quoted - yet scored lowest; the metric rewards
+    matching a draft, not classroom usability, and human reference review must fix that.
+  graph_theory_researcher: Prerequisite precision and recall are conditional on node
+    matching; one unmatched node zeroes both, so the current numbers measure matching, not
+    dependency correctness. Compute them on matched pairs and report matching separately.
+  ai_software_engineer: Arms are content-addressed and byte-replayable; the same harness can
+    re-run the comparison once the reference and metric change, at the recorded cost.
+implementation_status: Measured and recorded on 2026-09-14; no prompt or model promoted.
+  Human reference annotation and metric revision are the next steps.

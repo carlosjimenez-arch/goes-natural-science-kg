@@ -58,11 +58,15 @@ from goes_natural_science_kg.schemas.orchestration import (
 )
 from goes_natural_science_kg.schemas.prompt_evaluation import (
     AnnotatedCase,
+    ArmSummary,
     EvaluationCell,
     EvaluationMetric,
     EvaluationObservation,
     EvaluationReport,
     ExperimentSettings,
+    FollowUpCell,
+    FollowUpPlan,
+    FollowUpReport,
     PromptRegistry,
     ReferenceReview,
     ReplicateSummary,
@@ -90,6 +94,10 @@ from goes_natural_science_kg.schemas.workflow import LicenseGateState
 
 SCHEMA_MODELS: tuple[type[Contract], ...] = (
     EvidenceGraphSnapshot,
+    FollowUpPlan,
+    FollowUpCell,
+    FollowUpReport,
+    ArmSummary,
     CalibrationRecord,
     CalibrationSample,
     ConfidenceEstimate,

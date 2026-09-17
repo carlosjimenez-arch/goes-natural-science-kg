@@ -43,6 +43,10 @@
     "0012-confidence-calibration.yaml": {
       "bytes": 7092,
       "sha256": "e77249123246bc10489ac27406597ae48edacf40adac9da348663ca07bcc3d7b"
+    },
+    "0013-decomposition-followup.yaml": {
+      "bytes": 8384,
+      "sha256": "5152b9eecaf12b9ada273d81d01c5a6806337c33d9361afd0094fbd8a5d43166"
     }
   },
   "generated_at": "2026-09-14T05:24:47.271353Z",
@@ -53,7 +57,7 @@
     "pyproject.toml": "2081c4ba20d5e8bdc50e30cd98bfb0b21977cac92d4bedaf8a77bd2378ec9920",
     "uv.lock": "8d9ad56bb70ac25eed88f91b2f12848fc1ead9a275cdff100c33b2ae157cfc32"
   },
-  "notes": "Research and implemented architecture decisions through Phase 6, proposed system and evaluation design (0010, 0011) and confidence calibration (0012).",
+  "notes": "Research and implemented architecture decisions through Phase 6, proposed system and evaluation design (0010, 0011) and confidence calibration (0012) and the measured decomposition follow-up (0013).",
   "schema_version": "artifact-manifest/1.0",
   "seed": 0,
   "settings_hash": "6e6558284e4205e98114b25e0e3305ee9c4ec4d52c78ab3acc3cc30f2f9a2cfe"

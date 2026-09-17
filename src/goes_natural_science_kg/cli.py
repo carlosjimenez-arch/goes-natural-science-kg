@@ -308,6 +308,54 @@ def prompts_report(
     )
 
 
+@app.command("prompts-followup")
+def prompts_followup(
+    plan_path: InputPath,
+    cases_path: Path = Path("tests/golden/prompt-evaluation/cases.jsonl"),
+    prompts_dir: Path = Path("prompts"),
+    cache_dir: Path = Path("data/interim/prompt-evaluation/responses"),
+    output: Path = Path("data/interim/prompt-evaluation/followup-cells"),
+    online: bool = False,
+) -> None:
+    """Run or resume a registered follow-up comparison of prompt/model arms; network requires --online."""
+    import asyncio
+
+    from goes_natural_science_kg.eval.harness import run_followup
+    from goes_natural_science_kg.schemas.prompt_evaluation import FollowUpPlan
+
+    plan = FollowUpPlan.model_validate_json(plan_path.read_bytes())
+    asyncio.run(run_followup(plan, cases_path, prompts_dir, cache_dir, output, online=online))
+
+
+@app.command("prompts-followup-report")
+def prompts_followup_report(
+    plan_path: InputPath,
+    cases_path: Path = Path("tests/golden/prompt-evaluation/cases.jsonl"),
+    cells_path: Path = Path("data/interim/prompt-evaluation/followup-cells"),
+    observations: Path = Path("data/interim/prompt-evaluation/responses"),
+    prompts_dir: Path = Path("prompts"),
+    output: Path = Path("data/processed/prompt-evaluation/followup-report.json"),
+) -> None:
+    """Aggregate recorded follow-up cells per arm with slices, worst slice and paired bootstrap."""
+    from goes_natural_science_kg.corpus.fetch import atomic_bytes
+    from goes_natural_science_kg.eval.registry import load_registry
+    from goes_natural_science_kg.eval.reporting import make_followup_report
+    from goes_natural_science_kg.schemas.prompt_evaluation import FollowUpPlan
+
+    plan = FollowUpPlan.model_validate_json(plan_path.read_bytes())
+    report = make_followup_report(
+        plan, cases_path, cells_path, observations, registry=load_registry(prompts_dir)
+    )
+    atomic_bytes(output, (canonical_json(report) + "\n").encode())
+    for arm in report.arms:
+        worst = arm.worst_slice
+        typer.echo(
+            f"{arm.arm.key}: final={arm.summary.final_pass_rate:.3f} eligible={arm.summary.eligible}"
+            + (f" worst={worst.dimension}={worst.key}:{worst.final_pass_rate:.3f}" if worst else "")
+        )
+    typer.echo(f"complete={report.complete}; provisional={report.provisional_choice}")
+
+
 @app.command("build")
 def build_curriculum(
     skills_map: Annotated[Path, typer.Option(exists=True, dir_okay=False)],

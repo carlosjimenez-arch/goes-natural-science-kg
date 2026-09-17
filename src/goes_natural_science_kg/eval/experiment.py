@@ -18,15 +18,26 @@ from goes_natural_science_kg.schemas.base import Contract, canonical_json, conte
 from goes_natural_science_kg.schemas.prompt_evaluation import (
     EvaluationObservation,
     ExperimentSettings,
+    FollowUpPlan,
     PromptRegistry,
 )
+
+# Published Vertex AI standard list prices in USD per million tokens for prompts <= 200K
+# tokens: (input, cached input, output incl. reasoning). Estimates, never invoices.
+MODEL_LIST_PRICES: dict[str, tuple[float, float, float]] = {
+    "gemini-2.5-flash": (0.30, 0.03, 2.50),
+    "gemini-2.5-pro": (1.25, 0.125, 10.0),
+    "gemini-2.5-flash-lite": (0.10, 0.01, 0.40),
+    "gemini-3-flash-preview": (0.50, 0.05, 3.00),
+    "gemini-3.1-pro-preview": (2.00, 0.20, 12.00),
+}
 
 
 async def evaluate_request(
     client: genai.Client | None,
     limiter: asyncio.Semaphore,
     cache: Path,
-    settings: ExperimentSettings,
+    settings: ExperimentSettings | FollowUpPlan,
     registry: PromptRegistry,
     prompt_id: str,
     payload: dict[str, Any],
@@ -35,12 +46,19 @@ async def evaluate_request(
     replicate: int,
     revision: int,
     request_locks: dict[str, asyncio.Lock],
+    *,
+    prompt_version: str = "1.0.0",
+    location: str | None = None,
 ) -> EvaluationObservation:
-    artifact = registry.get(prompt_id, "1.0.0")
-    rendered = registry.render(prompt_id, "1.0.0", {"input": canonical_json(payload)})
+    if location is None:
+        if not isinstance(settings, ExperimentSettings):
+            raise ValueError("follow-up requests must name their Vertex location")
+        location = settings.location
+    artifact = registry.get(prompt_id, prompt_version)
+    rendered = registry.render(prompt_id, prompt_version, {"input": canonical_json(payload)})
     request = {
         "prompt_id": prompt_id,
-        "prompt_version": "1.0.0",
+        "prompt_version": prompt_version,
         "prompt_sha256": artifact.sha256,
         "prompt": rendered,
         "input": payload,
@@ -52,7 +70,7 @@ async def evaluate_request(
         "temperature": settings.temperature,
         "thinking_budget": settings.thinking_budget,
         "cache_version": "prompt-experiment/1.0",
-        "location": settings.location,
+        "location": location,
     }
     key = content_hash(request)
     async with request_locks.setdefault(key, asyncio.Lock()):
@@ -99,17 +117,7 @@ async def evaluate_request(
         outgoing = usage.candidates_token_count if usage else None
         reasoning = usage.thoughts_token_count if usage else None
         cached = usage.cached_content_token_count if usage else None
-        cost = None
-        if incoming is not None and outgoing is not None:
-            # Published standard USD list prices <=200K prompt tokens; output includes reasoning.
-            rates = (0.30, 0.03, 2.50) if model == "gemini-2.5-flash" else (1.25, 0.125, 10.0)
-            if incoming > 200000:
-                raise ValueError("pricing tier unsupported by experiment")
-            cost = (
-                (incoming - (cached or 0)) * rates[0]
-                + (cached or 0) * rates[1]
-                + (outgoing + (reasoning or 0)) * rates[2]
-            ) / 1e6
+        cost = estimate_cost(model, incoming, outgoing, reasoning, cached)
         record = EvaluationObservation(
             request_sha256=key,
             request=request,
@@ -127,6 +135,28 @@ async def evaluate_request(
         )
         atomic_bytes(path, (canonical_json(record) + "\n").encode())
         return record
+
+
+def estimate_cost(
+    model: str,
+    incoming: int | None,
+    outgoing: int | None,
+    reasoning: int | None,
+    cached: int | None,
+) -> float | None:
+    """Published standard USD list prices <=200K prompt tokens; output includes reasoning."""
+    if incoming is None or outgoing is None:
+        return None
+    if model not in MODEL_LIST_PRICES:
+        raise ValueError("no list price registered for model " + model)
+    if incoming > 200000:
+        raise ValueError("pricing tier unsupported by experiment")
+    rates = MODEL_LIST_PRICES[model]
+    return (
+        (incoming - (cached or 0)) * rates[0]
+        + (cached or 0) * rates[1]
+        + (outgoing + (reasoning or 0)) * rates[2]
+    ) / 1e6
 
 
 def read_observation(directory: Path, key: str) -> EvaluationObservation:
