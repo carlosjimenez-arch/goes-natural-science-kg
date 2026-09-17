@@ -3,6 +3,7 @@
 # Copyright 2026 Gobierno de El Salvador.
 # SPDX-License-Identifier: Apache-2.0
 # Mission: Implement bounded, evidence-audited hierarchical orchestration.
+import ast
 import asyncio
 from datetime import datetime
 from pathlib import Path
@@ -52,10 +53,57 @@ def load_evidence(root: Path, request: OrchestrationInput) -> tuple[EvidencePack
     )
 
 
+def imported_modules(path: Path, package: str) -> set[str]:
+    """Dotted names of this package that the module imports, including inside functions."""
+    names: set[str] = set()
+    for node in ast.walk(ast.parse(path.read_text())):
+        if isinstance(node, ast.Import):
+            names.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            names.add(node.module)
+            names.update(node.module + "." + alias.name for alias in node.names)
+    return {name for name in names if name == package or name.startswith(package + ".")}
+
+
+def module_file(package_root: Path, dotted: str) -> Path | None:
+    parts = dotted.split(".")[1:]
+    if not parts:
+        candidate = package_root / "__init__.py"
+        return candidate if candidate.is_file() else None
+    module = package_root.joinpath(*parts).with_suffix(".py")
+    if module.is_file():
+        return module
+    package = package_root.joinpath(*parts) / "__init__.py"
+    return package if package.is_file() else None
+
+
+def import_closure(entry: Path, package_root: Path) -> tuple[Path, ...]:
+    """Modules this entry point can reach through static imports, transitively.
+
+    Hashing every file in the package made an edit to an unrelated module change
+    execution_sha256 and invalidate recorded runs. The closure keeps the guarantee that
+    any module able to affect the run is covered, without the false positives.
+    """
+    package = package_root.name
+    seen: set[Path] = set()
+    queue = [entry]
+    while queue:
+        path = queue.pop()
+        if path in seen:
+            continue
+        seen.add(path)
+        for dotted in imported_modules(path, package):
+            target = module_file(package_root, dotted)
+            if target is not None and target not in seen:
+                queue.append(target)
+    return tuple(sorted(seen))
+
+
 def execution_id(runtime: AgentRuntime) -> str:
     prompts = {
         p.name: content_hash(p.read_text()) for p in sorted(runtime.prompts.glob("*.prompt"))
     }
+    package_root = Path(__file__).parents[1]
     return content_hash(
         {
             "input": runtime.request.model_dump(mode="json"),
@@ -63,9 +111,10 @@ def execution_id(runtime: AgentRuntime) -> str:
             "evidence": [p.model_dump(mode="json") for p in runtime.evidence],
             "prompts": prompts,
             "workflow": "4.2",
+            "implementation_fingerprint": "import-closure/1.0",
             "implementation": {
-                str(p.relative_to(Path(__file__).parents[1])): content_hash(p.read_text())
-                for p in sorted(Path(__file__).parents[1].rglob("*.py"))
+                str(path.relative_to(package_root)): content_hash(path.read_text())
+                for path in import_closure(Path(__file__).resolve(), package_root)
             },
         }
     )

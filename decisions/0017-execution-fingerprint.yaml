@@ -1,0 +1,110 @@
+schema_version: architecture-decision/1.0
+id: '0017'
+title: 'Fingerprint an orchestration run by its import closure, not by the whole package'
+status: accepted
+date: '2026-09-17'
+supersedes: null
+invariants:
+- 2
+- 3
+- 8
+context: |
+  OrchestrationReport.execution_sha256 identifies the exact code that produced a recorded
+  run, so a replay under different code is detectable rather than silently accepted. It was
+  computed by hashing every `.py` file in the package. That is sound but far too wide: on
+  2026-09-17 alone, work that touched only the evaluation studies (eval/rescore.py,
+  eval/reviewer_agreement.py, schemas/rescoring.py, a Protocol moved into schemas) forced
+  the recorded golden orchestration report to be regenerated four times, each time with an
+  identical body and only a new execution_sha256.
+
+  The cost is not the regeneration. It is that a fingerprint which changes for unrelated
+  reasons stops carrying information: a reviewer who sees execution_sha256 move cannot tell
+  whether the orchestration changed or someone edited a report generator, and the habit of
+  regenerating the artifact to make tests pass erodes exactly the guarantee the field exists
+  to provide. Decision 0010 names maintainability as the requirement that a contributor can
+  change one thing and know what broke.
+options:
+- name: Hash the static import closure of the orchestration entry point (chosen)
+  pros:
+  - Keeps the guarantee - any module that can execute during a run is reachable from the
+    entry point and is therefore hashed.
+  - Removes the false positives - 25 of 73 package modules are in the closure, so edits to
+    the solver, the CLI, the graph tools or the evaluation studies no longer move the digest.
+  - Deterministic and auditable from the source alone; ast.walk covers function-local
+    imports, which this codebase uses for deferred loading.
+  cons:
+  - A module reached only through a dynamic import (importlib by computed name) would escape
+    the closure. The package uses none; a test pins the closure contents so one would be noticed.
+  - The digest changes once more when this lands, invalidating the current recorded value.
+- name: Keep hashing the whole package
+  pros:
+  - Trivially complete.
+  cons:
+  - Already demonstrated to produce repeated, meaningless invalidations; teaches contributors
+    to regenerate the artifact rather than to read the diff.
+- name: Hash a hand-maintained list of orchestration modules
+  pros:
+  - Precise today.
+  cons:
+  - Silently goes stale the first time someone adds an import, which is the failure mode that
+    matters most and would not be detected.
+- name: Drop the implementation component entirely
+  pros:
+  - No churn.
+  cons:
+  - Removes the only signal that a replay ran under different code; Invariant 8 requires the
+    run to be identifiable.
+criteria:
+- Every module that can execute during a run is covered.
+- A change to a module that cannot execute during a run does not change the digest.
+- The closure is computed from the source, with no runtime import-order dependence.
+- The covered set is pinned by a test, so a future dynamic import is noticed.
+decision: |
+  Replace the package-wide hash in agents/runner.py::execution_id with the transitive static
+  import closure of agents/runner.py, restricted to modules of this package. The request
+  records implementation_fingerprint "import-closure/1.0" alongside the per-module digests,
+  so the scheme is self-describing and a later change to it is visible in the artifact rather
+  than only in the git history.
+
+  The closure is computed with ast, following both module-level and function-level imports
+  and resolving a dotted name to a module file or a package __init__.py. It covers 25 of the
+  73 package modules: the four agent modules, the transport, the corpus index, trace, chunk,
+  normalize, manifest and fetch helpers, the prompt registry and reader, the confidence
+  calibration used by the report writer, and every contract those validate. It excludes the
+  CLI, the settings module, the CP-SAT solver and its artifacts, the graph diff and linked
+  data tools, the evaluation harness, the prompt experiments and the two 2026-09-17
+  evaluation studies.
+
+  The recorded golden orchestration report is regenerated once, offline from its existing
+  cassettes, with every ballot, verdict and micro-skill byte-identical and only
+  execution_sha256 changing. Verified after the change: appending a comment to
+  eval/rescore.py leaves all orchestration replay tests passing, which was not true before.
+consequences:
+- execution_sha256 values recorded before 2026-09-17 were computed under the package-wide
+  scheme and are not comparable with values recorded after it. The fingerprint field in the
+  request states which scheme produced it.
+- A module reached only by a dynamic import would be missed. The package uses none today and
+  a test pins both what the closure must contain and what it must exclude, so introducing one
+  fails that test rather than silently weakening the digest.
+- The closure is intentionally generous at its boundary - eval/calibration.py is included
+  because the report writer calls it, even though it runs after the graph executes. Anything
+  reachable is hashed; nothing reachable is judged irrelevant by hand.
+- Adding an import to a module inside the closure widens it automatically, which is the
+  correct direction for a safety property.
+enforced_by:
+- tests/unit/test_execution_fingerprint.py::test_closure_covers_every_module_orchestration_can_reach
+- tests/unit/test_execution_fingerprint.py::test_closure_excludes_modules_that_cannot_affect_a_run
+- tests/unit/test_execution_fingerprint.py::test_closure_follows_transitive_and_function_local_imports
+- tests/unit/test_execution_fingerprint.py::test_module_resolution_handles_packages_and_foreign_names
+- tests/integration/test_agent_hierarchy.py::test_real_recorded_hierarchy_replays_every_level_offline
+- tests/integration/test_agent_hierarchy.py::test_report_writer_preserves_every_revision_and_hash
+profile_tradeoffs:
+  curriculum_designer: A run identifier that moves for unrelated reasons makes an audit trail
+    unreadable to the reviewer who has to certify that a published graph came from approved code.
+  graph_theory_researcher: The import graph is the reachability relation that matters here;
+    taking its closure from the entry point is the precise answer, and hashing the whole
+    package is the trivial over-approximation.
+  ai_software_engineer: A tripwire that fires on unrelated changes gets routinely reset, which
+    is worse than a narrower tripwire that is believed when it fires.
+implementation_status: Implemented on 2026-09-17; the golden orchestration report was
+  regenerated offline once and its body is unchanged.
