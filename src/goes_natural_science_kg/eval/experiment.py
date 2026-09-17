@@ -18,8 +18,8 @@ from goes_natural_science_kg.schemas.base import Contract, canonical_json, conte
 from goes_natural_science_kg.schemas.prompt_evaluation import (
     EvaluationObservation,
     ExperimentSettings,
-    FollowUpPlan,
     PromptRegistry,
+    RequestSettings,
 )
 
 # Published Vertex AI standard list prices in USD per million tokens for prompts <= 200K
@@ -37,7 +37,7 @@ async def evaluate_request(
     client: genai.Client | None,
     limiter: asyncio.Semaphore,
     cache: Path,
-    settings: ExperimentSettings | FollowUpPlan,
+    settings: RequestSettings,
     registry: PromptRegistry,
     prompt_id: str,
     payload: dict[str, Any],
@@ -51,8 +51,9 @@ async def evaluate_request(
     location: str | None = None,
 ) -> EvaluationObservation:
     if location is None:
+        # Only the historical single-location experiment omits it; every plan names it.
         if not isinstance(settings, ExperimentSettings):
-            raise ValueError("follow-up requests must name their Vertex location")
+            raise ValueError("this experiment must name its Vertex location per request")
         location = settings.location
     artifact = registry.get(prompt_id, prompt_version)
     rendered = registry.render(prompt_id, prompt_version, {"input": canonical_json(payload)})

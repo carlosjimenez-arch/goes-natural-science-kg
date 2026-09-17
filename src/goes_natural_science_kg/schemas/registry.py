@@ -78,6 +78,11 @@ from goes_natural_science_kg.schemas.prompts import (
     EvidenceReview,
     PromptMetadata,
 )
+from goes_natural_science_kg.schemas.rescoring import RescoreReport, RevisedMetric
+from goes_natural_science_kg.schemas.reviewer_agreement import (
+    ReviewerAgreementReport,
+    ReviewerProbePlan,
+)
 from goes_natural_science_kg.schemas.sequencing import (
     ContinuityThread,
     LearningActivity,
@@ -98,6 +103,10 @@ SCHEMA_MODELS: tuple[type[Contract], ...] = (
     FollowUpCell,
     FollowUpReport,
     ArmSummary,
+    RevisedMetric,
+    RescoreReport,
+    ReviewerProbePlan,
+    ReviewerAgreementReport,
     CalibrationRecord,
     CalibrationSample,
     ConfidenceEstimate,

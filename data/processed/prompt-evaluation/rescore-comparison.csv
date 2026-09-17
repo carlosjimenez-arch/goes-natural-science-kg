@@ -1,0 +1,8 @@
+arm,prompt_id,generator_model,case_replicates,frozen_pass_rate,revised_pass_rate,node_match_rate,edge_precision_matched,edge_recall_matched,single_observable_verb,monotone_cognitive_chain_rate,reasoning_step_rate,citations_resolve_rate,structural_error_rate,worst_grade,worst_grade_revised_pass
+anchored-flash,decomposition-anchored-few-shot,gemini-2.5-flash,120,0.39166666666666666,0.7333333333333333,0.7222222222222222,0.9620253164556962,0.9493670886075949,1.0,1.0,1.0,1.0,0.0,4,0.625
+anchored-flash-lite,decomposition-anchored-few-shot,gemini-2.5-flash-lite,120,0.0,0.0,,,,,0.0,0.0,0.0,0.0,2,0.0
+anchored-g3-flash,decomposition-anchored-few-shot,gemini-3-flash-preview,120,0.43333333333333335,0.775,0.7416666666666667,0.9753086419753086,0.9634146341463414,1.0,1.0,1.0,1.0,0.0,5,0.625
+anchored-g31-pro,decomposition-anchored-few-shot,gemini-3.1-pro-preview,120,0.35833333333333334,0.725,0.6972222222222222,0.9583333333333334,0.9452054794520548,1.0,1.0,0.9833333333333333,1.0,0.0,5,0.5416666666666666
+anchored-pro,decomposition-anchored-few-shot,gemini-2.5-pro,120,0.35,0.6583333333333333,0.6861111111111111,1.0,0.9637681159420289,0.9972222222222222,1.0,0.95,1.0,0.0,5,0.5
+checklist-flash,decomposition-checklist-structured,gemini-2.5-flash,120,0.2916666666666667,0.6166666666666667,0.6749999999999999,0.9538461538461539,0.8133333333333334,1.0,1.0,0.975,1.0,0.0,5,0.375
+few-shot-flash,decomposition-few-shot,gemini-2.5-flash,120,0.43333333333333335,0.7583333333333333,0.7472222222222222,0.9878048780487805,0.9235294117647059,1.0,1.0,1.0,1.0,0.0,5,0.6666666666666666

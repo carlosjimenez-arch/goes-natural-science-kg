@@ -1,0 +1,124 @@
+schema_version: architecture-decision/1.0
+id: '0014'
+title: 'Separate reference agreement from design quality in the decomposition score'
+status: accepted
+date: '2026-09-17'
+supersedes: null
+invariants:
+- 2
+- 3
+- 4
+- 8
+context: |
+  Decision 0013 concluded that the evaluation target, not generation, limits the
+  decomposition role: seven arms spanning two prompt methods and five generator models
+  all landed between 0.29 and 0.43 final pass rate, and the paired bootstrap separated
+  none of them from the baseline. Reading the recorded responses showed why. The frozen
+  scorer (version 1.1.0) maps an unmatched candidate node to a sentinel key before
+  comparing prerequisite edges, so a single disagreement about what to call a step also
+  destroys every edge touching it. The pass rule then demands coverage >= 0.8 with three
+  reference items, which is three of three, plus prerequisite precision and recall of
+  exactly 1.0. One naming disagreement is therefore indistinguishable from a wrong
+  dependency, and both are fatal.
+
+  This decision adds a second reading of the same recorded responses. It changes no
+  provider request, no recorded cell and no frozen metric; scorer 1.1.0 and the two
+  registered experiments continue to replay byte-identically.
+options:
+- name: Re-read recorded responses under a revised rule that separates the two questions (chosen)
+  pros:
+  - Costs nothing - 840 case-replicates are rescored from recorded observations with no
+    provider request.
+  - Tells apart "named the same steps" from "ordered the steps the same way", which the
+    frozen metric conflates.
+  - Adds reference-free design checks that survive a wrong reference, so the score does not
+    depend entirely on one agent-authored decomposition.
+  cons:
+  - The revised thresholds are declared policy, not validated cut points.
+  - Reference agreement still depends on a model reviewer's equivalence judgments.
+- name: Relax the frozen thresholds in place
+  pros:
+  - One-line change.
+  cons:
+  - Rewrites a measured, published result; the historical experiment would stop replaying
+    and decisions 0006, 0007 and 0013 would cite numbers that no longer reproduce.
+- name: Drop the reference and score only design quality
+  pros:
+  - Immune to a bad reference.
+  cons:
+  - Contract conformance says nothing about whether the decomposition is the right one;
+    it would report a high number for any well-formed output.
+criteria:
+- The frozen scorer, its cells and its reports stay byte-identical.
+- Edge metrics are computed only between nodes both sides agree exist.
+- Every design check is a contract-level fact about the output, not a heuristic.
+- The revised rule is declared before the numbers it produces are inspected.
+decision: |
+  Add schemas/rescoring.py and eval/rescore.py with a second, offline reading of the
+  recorded follow-up responses at each case's final revision, published as
+  data/processed/prompt-evaluation/rescore-report.json (rescorer 2.0.0).
+
+  ReferenceAgreement keeps node_match_rate as matched-over-expected and adds
+  edge_precision_matched and edge_recall_matched, computed only over edges whose two
+  endpoints are both matched nodes; the count of comparable edges is reported so a null is
+  never read as a zero. DesignQuality carries reference-free facts: a single-word
+  observable verb, the number of distinct cognitive domains, presence of a reasoning step,
+  a cognitive chain that never decreases along a prerequisite edge, grade band containing
+  the assigned grade, minutes within the assignment, citations that resolve, and the
+  deterministic structural errors. The revised pass requires every design check, a
+  node_match_rate of at least 0.6, and, where comparable edges exist, an
+  edge_recall_matched of at least 0.5.
+
+  MEASURED RESULT over 840 case-replicates, seven arms (frozen -> revised final pass rate,
+  node match, edge recall on matched nodes):
+  anchored-g3-flash 0.433 -> 0.775, 0.742, 0.963; few-shot-flash 0.433 -> 0.758, 0.747,
+  0.924; anchored-flash 0.392 -> 0.733, 0.722, 0.949; anchored-g31-pro 0.358 -> 0.725,
+  0.697, 0.945; anchored-pro 0.350 -> 0.658, 0.686, 0.964; checklist-flash 0.292 -> 0.617,
+  0.675, 0.813; anchored-flash-lite 0.000 -> 0.000 (no valid output).
+
+  The finding this decision records: the frozen prerequisite recall of 0.41 to 0.55 was
+  measuring node naming, not dependency correctness. Once endpoints are restricted to nodes
+  both sides accept, the models reproduce the reference dependency order in 92 to 96 per
+  cent of comparable edges. Of the 208 remaining failures across the six working arms, 173
+  are node_match_rate below 0.6 and only 29 are edge recall below 0.5, of which 13 belong
+  to the single prompt that omits prerequisites. The ranking is unchanged and no arm beats
+  the baseline under a paired bootstrap on the revised rule either (anchored-g3-flash
+  +0.017, interval -0.092 to +0.117), so the conclusion of decision 0013 is robust to the
+  metric.
+
+  The bottleneck is therefore located precisely: the equivalence judgment that decides
+  whether a candidate step is the same step as a reference step. Decision 0015 measures it.
+consequences:
+- Scorer 1.1.0 remains frozen. The revised rule is a reading of recorded responses, never a
+  re-run, and the rescore report records the digest of the follow-up report it re-reads.
+- The 0.6 node-match and 0.5 edge-recall thresholds are declared policy for gating, written
+  before the numbers were computed, and are not empirically optimal. Changing them requires
+  a superseding decision.
+- Design-quality checks are contract-level facts about an output. A perfect design score
+  means the output is well formed, never that the decomposition teaches anything.
+- Null edge metrics mean there were no comparable edges, never zero disagreement; the
+  comparable-edge counts are published alongside so the distinction survives.
+- A decomposition reference with three items quantizes node_match_rate to 0, 0.33, 0.67 and
+  1.0; any threshold between 0.34 and 0.66 behaves identically. Larger references are needed
+  before the threshold carries information.
+- Grade and domain slices hold five to eight distinct cases and stay flagged insufficient.
+enforced_by:
+- tests/integration/test_prompt_evaluation_replay.py::test_recorded_responses_rescore_to_the_committed_revised_report
+- tests/benchmarks/test_rescore_benchmarks.py::test_rescore_forty_recorded_cases
+- tests/unit/test_rescore.py::test_one_unmatched_node_no_longer_zeroes_dependency_metrics
+- tests/unit/test_rescore.py::test_full_agreement_scores_one_and_reordered_dependencies_are_caught
+- tests/unit/test_rescore.py::test_design_quality_is_reference_free_and_catches_inflated_labels
+- tests/unit/test_rescore.py::test_revised_pass_requires_design_checks_and_most_reference_nodes
+- tests/integration/test_prompt_evaluation_replay.py::test_complete_recorded_experiment_and_report_replay
+- tests/integration/test_prompt_evaluation_replay.py::test_recorded_followup_arms_replay_and_report_byte_identically
+profile_tradeoffs:
+  curriculum_designer: Two teachers can name the same lesson differently and still teach the
+    same sequence; a score that punishes wording as if it were a pedagogical error will keep
+    rejecting usable material and will mislead the review panel about where the problem is.
+  graph_theory_researcher: Precision and recall over a labelled edge set are only defined
+    once the vertex correspondence is fixed. Computing them through a sentinel for unmatched
+    vertices measures the matching, not the edges, and the two must be reported separately.
+  ai_software_engineer: Re-reading recorded responses is free, reproducible and leaves the
+    published experiment untouched, so a metric change never invalidates a measured result.
+implementation_status: Implemented and measured on 2026-09-17 over the 210 recorded follow-up
+  cells; no provider request was made and no prompt or model is promoted.

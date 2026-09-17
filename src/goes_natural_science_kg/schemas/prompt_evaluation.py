@@ -5,7 +5,7 @@
 # Mission: Version and measure evidence-grounded prompt artifacts.
 from __future__ import annotations
 
-from typing import Annotated, Any, Literal, Self
+from typing import Annotated, Any, Literal, Protocol, Self
 
 from pydantic import Field, model_validator
 
@@ -23,6 +23,19 @@ from goes_natural_science_kg.schemas.orchestration import (
 )
 
 Technique = Literal["cot", "few_shot", "cot_few_shot", "structured"]
+
+
+class RequestSettings(Protocol):
+    """The provider-call knobs any registered experiment must fix and record."""
+
+    @property
+    def seed(self) -> int: ...
+
+    @property
+    def temperature(self) -> float: ...
+
+    @property
+    def thinking_budget(self) -> int: ...
 
 
 class ChangeLogEntry(Contract):

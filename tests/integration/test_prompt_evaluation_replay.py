@@ -172,3 +172,29 @@ def test_recorded_followup_arms_replay_and_report_byte_identically(tmp_path):
         lite.summary.schema_rate == 0.0
         and "incomplete provider usage" in lite.summary.rejection_reasons
     )
+
+
+def test_recorded_responses_rescore_to_the_committed_revised_report(tmp_path):
+    from goes_natural_science_kg.eval.rescore import make_rescore_report
+    from goes_natural_science_kg.schemas.base import canonical_json
+    from goes_natural_science_kg.schemas.rescoring import RescoreReport
+
+    folder = ROOT / "data/processed/prompt-evaluation"
+    report = make_rescore_report(
+        folder / "followup-cells",
+        ROOT / "tests/golden/prompt-evaluation/cases.jsonl",
+        folder / "observations",
+        folder / "followup-report.json",
+    )
+    assert canonical_json(report) + "\n" == (folder / "rescore-report.json").read_text()
+    stored = RescoreReport.model_validate_json((folder / "rescore-report.json").read_bytes())
+    assert stored.rescored_case_replicates == 840
+    # The frozen scorer conflated node naming with dependency order; the revised one does not.
+    working = [a for a in stored.arms if a.node_match_rate]
+    assert len(working) == 6
+    assert all(a.revised_pass_rate > a.frozen_pass_rate for a in working)
+    assert all(a.edge_recall_matched and a.edge_recall_matched >= 0.80 for a in working)
+    # Node matching, not dependency order, is what the candidates actually fail.
+    failures = [m for m in stored.metrics if not m.revised_passed and m.agreement]
+    node_limited = [m for m in failures if m.agreement and m.agreement.node_match_rate < 0.6]
+    assert len(node_limited) / len(failures) > 0.8

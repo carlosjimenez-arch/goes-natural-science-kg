@@ -356,6 +356,74 @@ def prompts_followup_report(
     typer.echo(f"complete={report.complete}; provisional={report.provisional_choice}")
 
 
+@app.command("prompts-rescore")
+def prompts_rescore(
+    cells_path: Path = Path("data/processed/prompt-evaluation/followup-cells"),
+    cases_path: Path = Path("tests/golden/prompt-evaluation/cases.jsonl"),
+    observations: Path = Path("data/processed/prompt-evaluation/observations"),
+    source_report: Path = Path("data/processed/prompt-evaluation/followup-report.json"),
+    output: Path = Path("data/processed/prompt-evaluation/rescore-report.json"),
+) -> None:
+    """Re-read recorded decomposition responses under the revised rule; no provider request."""
+    from goes_natural_science_kg.corpus.fetch import atomic_bytes
+    from goes_natural_science_kg.eval.rescore import make_rescore_report
+
+    report = make_rescore_report(cells_path, cases_path, observations, source_report)
+    atomic_bytes(output, (canonical_json(report) + "\n").encode())
+    for arm in report.arms:
+        worst = arm.worst_grade_slice
+        typer.echo(
+            f"{arm.arm:22s} frozen={arm.frozen_pass_rate:.3f} revised={arm.revised_pass_rate:.3f} "
+            f"nodes={arm.node_match_rate or 0:.3f} edges={arm.edge_recall_matched or 0:.3f}"
+            + (f" worst=grade {worst.key}:{worst.revised_pass_rate:.3f}" if worst else "")
+        )
+
+
+@app.command("prompts-reviewer-probe")
+def prompts_reviewer_probe(
+    plan_path: InputPath,
+    cases_path: Path = Path("tests/golden/prompt-evaluation/cases.jsonl"),
+    prompts_dir: Path = Path("prompts"),
+    cells_path: Path = Path("data/processed/prompt-evaluation/followup-cells"),
+    observations: Path = Path("data/processed/prompt-evaluation/observations"),
+    cache_dir: Path = Path("data/interim/prompt-evaluation/responses"),
+    output: Path = Path("data/processed/prompt-evaluation/reviewer-agreement.json"),
+    online: bool = False,
+) -> None:
+    """Re-judge recorded candidates with independent reviewer models; network requires --online."""
+    import asyncio
+
+    from goes_natural_science_kg.corpus.fetch import atomic_bytes
+    from goes_natural_science_kg.eval.reviewer_agreement import (
+        make_reviewer_report,
+        run_reviewer_probe,
+    )
+    from goes_natural_science_kg.schemas.reviewer_agreement import ReviewerProbePlan
+
+    plan = ReviewerProbePlan.model_validate_json(plan_path.read_bytes())
+    recorded, fresh, failures, records, candidates = asyncio.run(
+        run_reviewer_probe(
+            plan, cases_path, prompts_dir, cells_path, observations, cache_dir, online=online
+        )
+    )
+    report = make_reviewer_report(plan, cases_path, recorded, fresh, failures, records, candidates)
+    atomic_bytes(output, (canonical_json(report) + "\n").encode())
+    for reviewer in report.reviewers:
+        typer.echo(
+            f"{reviewer.reviewer:14s} {reviewer.model:24s} node_match={reviewer.node_match_rate:.3f} "
+            f"equivalent={reviewer.equivalent_pairs}/{reviewer.judged_pairs} failed={reviewer.failed_requests}"
+        )
+    for pair in report.agreements:
+        typer.echo(
+            f"{pair.reviewer_a} vs {pair.reviewer_b}: agreement={pair.observed_agreement:.3f} "
+            f"kappa={pair.cohen_kappa:.3f} (only_a={pair.only_a_equivalent} only_b={pair.only_b_equivalent})"
+        )
+    typer.echo(
+        f"krippendorff_alpha={report.krippendorff_alpha}; spread={report.node_match_rate_spread:.3f}; "
+        f"usd={report.estimated_total_usd:.2f}"
+    )
+
+
 @app.command("build")
 def build_curriculum(
     skills_map: Annotated[Path, typer.Option(exists=True, dir_okay=False)],
