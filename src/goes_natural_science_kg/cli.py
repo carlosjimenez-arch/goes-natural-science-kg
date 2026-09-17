@@ -410,7 +410,8 @@ def prompts_reviewer_probe(
     atomic_bytes(output, (canonical_json(report) + "\n").encode())
     for reviewer in report.reviewers:
         typer.echo(
-            f"{reviewer.reviewer:14s} {reviewer.model:24s} node_match={reviewer.node_match_rate:.3f} "
+            f"{reviewer.reviewer:16s} {reviewer.model:24s} node_match={reviewer.node_match_rate:.3f} "
+            f"implied_pass={reviewer.implied_revised_pass_rate:.3f} "
             f"equivalent={reviewer.equivalent_pairs}/{reviewer.judged_pairs} failed={reviewer.failed_requests}"
         )
     for pair in report.agreements:

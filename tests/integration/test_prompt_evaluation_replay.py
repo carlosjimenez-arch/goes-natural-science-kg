@@ -198,3 +198,49 @@ def test_recorded_responses_rescore_to_the_committed_revised_report(tmp_path):
     failures = [m for m in stored.metrics if not m.revised_passed and m.agreement]
     node_limited = [m for m in failures if m.agreement and m.agreement.node_match_rate < 0.6]
     assert len(node_limited) / len(failures) > 0.8
+
+
+def test_recorded_reviewer_probe_replays_to_the_committed_agreement_report(tmp_path):
+    from goes_natural_science_kg.eval.reviewer_agreement import (
+        make_reviewer_report,
+        run_reviewer_probe,
+    )
+    from goes_natural_science_kg.schemas.base import canonical_json
+    from goes_natural_science_kg.schemas.reviewer_agreement import (
+        ReviewerAgreementReport,
+        ReviewerProbePlan,
+    )
+
+    folder = ROOT / "data/processed/prompt-evaluation"
+    plan = ReviewerProbePlan.model_validate_json((folder / "reviewer-probe-plan.json").read_bytes())
+    recorded, fresh, failures, records, candidates = asyncio.run(
+        run_reviewer_probe(
+            plan,
+            ROOT / "tests/golden/prompt-evaluation/cases.jsonl",
+            ROOT / "prompts",
+            folder / "followup-cells",
+            folder / "observations",
+            folder / "observations",
+            online=False,
+        )
+    )
+    report = make_reviewer_report(
+        plan,
+        ROOT / "tests/golden/prompt-evaluation/cases.jsonl",
+        recorded,
+        fresh,
+        failures,
+        records,
+        candidates,
+    )
+    assert canonical_json(report) + "\n" == (folder / "reviewer-agreement.json").read_text()
+    stored = ReviewerAgreementReport.model_validate_json(
+        (folder / "reviewer-agreement.json").read_bytes()
+    )
+    assert stored.human_reviewed is False
+    assert len(stored.reviewers) == 3 and len(stored.agreements) == 3
+    # Pairwise concordance is substantial by the usual rubric and by decision 0011's floor.
+    assert all(a.cohen_kappa >= 0.60 for a in stored.agreements)
+    assert stored.krippendorff_alpha is not None and stored.krippendorff_alpha >= 0.60
+    # Yet the score the reviewers imply swings far more than any generator arm did.
+    assert stored.implied_pass_rate_spread > 0.20

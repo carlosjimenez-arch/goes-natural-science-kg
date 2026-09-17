@@ -63,9 +63,12 @@ class PairLabel(Contract):
 
 
 class ReviewerNodeMatch(Contract):
+    """One reviewer's aggregate effect on the score, over the units it actually labelled."""
+
     reviewer: Slug
     model: Text
     node_match_rate: Probability
+    implied_revised_pass_rate: Probability
     cases: Annotated[int, Field(strict=True, ge=1)]
     equivalent_pairs: Annotated[int, Field(strict=True, ge=0)]
     judged_pairs: Annotated[int, Field(strict=True, ge=1)]
@@ -97,4 +100,5 @@ class ReviewerAgreementReport(Contract):
     agreements: tuple[PairwiseAgreement, ...]
     krippendorff_alpha: float | None
     node_match_rate_spread: Probability
+    implied_pass_rate_spread: Probability
     limitations: tuple[Text, ...]

@@ -111,3 +111,46 @@ def test_probe_plan_requires_exactly_one_recorded_reviewer():
         reference_reviewer="x",
     )
     assert plan.replicates == 3 and plan.prompt_id == "reference-review"
+
+
+def labels_for(reviewer_says: dict[tuple[str, str], bool], arm: str = "arm") -> list:
+    from goes_natural_science_kg.schemas.reviewer_agreement import PairLabel
+
+    return [
+        PairLabel(
+            generator_arm=arm,
+            replicate=0,
+            case_id=case_id,
+            candidate_key=candidate,
+            expected_key=candidate,
+            equivalent=value,
+        )
+        for (case_id, candidate), value in reviewer_says.items()
+    ]
+
+
+def test_a_missing_reviewer_unit_is_excluded_rather_than_counted_as_disagreement():
+    from pathlib import Path
+
+    from goes_natural_science_kg.eval.reviewer_agreement import make_reviewer_report
+
+    root = Path(__file__).resolve().parents[2]
+    cases_path = root / "tests/golden/prompt-evaluation/cases.jsonl"
+    plan = ReviewerProbePlan(
+        name="probe",
+        project="p",
+        generator_arms=("arm",),
+        reviewers=(reviewer("recorded", True), reviewer("fresh")),
+        reference_reviewer="recorded",
+    )
+    shared = {("length", "length-1"): True, ("length", "length-2"): False}
+    recorded = labels_for({**shared, ("length", "length-3"): True})
+    fresh = {"fresh": labels_for(shared)}
+    report = make_reviewer_report(plan, cases_path, recorded, fresh, {"fresh": 1}, [], {})
+    agreement = report.agreements[0]
+    # Only the two units both reviewers labelled are compared; the third is dropped.
+    assert agreement.pairs == 2 and agreement.observed_agreement == 1.0
+    assert report.krippendorff_alpha == 1.0
+    missing = next(r for r in report.reviewers if r.reviewer == "fresh")
+    assert missing.judged_pairs == 2 and missing.failed_requests == 1
+    assert not report.complete

@@ -37,7 +37,7 @@ checks does not establish instructional quality or scientific validity.
 | Research and contracts | Primary-source findings, typed schemas, stable IDs and semantic graph diffs | AND/OR prerequisite routes remain a proposed extension |
 | Corpus | License gate, PDF extraction, semantic chunks, embeddings and traceable index | Eight accepted national documents per grade across six countries; TIMSS/NGSS corpus admission remains unresolved |
 | Agent hierarchy | Four LangGraph levels, specialized judges, bounded revisions, checkpoints and caches | Rejected items require human review |
-| Prompt evaluation | Three variants per critical role, three replicas, recorded provider responses, offline replay and a seven-arm decomposition follow-up across prompts and five Gemini models | Reference cases are agent-authored; no decomposition prompt or model reaches the 0.80 pass threshold, and the metric itself is the measured bottleneck |
+| Prompt evaluation | Three variants per critical role, three replicas, recorded provider responses, offline replay, a seven-arm decomposition follow-up across prompts and five Gemini models, a revised offline score and a three-model reviewer agreement study | Reference cases are agent-authored; no decomposition prompt or model reaches the pass threshold, and the reviewer model shifts the score more than any generator change |
 | Curricularization | CP-SAT scheduling, independent audit, JSON-LD and generated HTML reports | The provisional graph supplies only 640 of the required 9,600 minutes per grade |
 
 The solver rejects that incomplete input. The schedules in
@@ -140,6 +140,8 @@ uv run --locked goes-science corpus-trace --help
 uv run --locked goes-science orchestrate --help
 uv run --locked goes-science prompts-evaluate --help
 uv run --locked goes-science prompts-followup --help
+uv run --locked goes-science prompts-rescore --help
+uv run --locked goes-science prompts-reviewer-probe --help
 ```
 
 ### Confidence estimates
@@ -257,11 +259,43 @@ tuning/holdout split and a paired bootstrap interval against the baseline
 No arm is eligible and nothing is promoted. Prompt method and model tier do not move the
 metric, while task quality changes visibly; the pass rule measures agreement with an
 agent-authored three-item reference under an all-or-nothing prerequisite match. See
-[decision 0013](decisions/0013-decomposition-followup.yaml) for the analysis and next steps
-(human reference annotation and metric revision, decisions 0010 and 0011).
+[decision 0013](decisions/0013-decomposition-followup.yaml).
 
-Local validation on **Python 3.13.15**: **164 tests passed**, **86% coverage** and
-**22 benchmark cases passed**. Lint, strict types, static security checks and the
+### Where the score actually comes from
+
+Two follow-on studies read the same recorded responses instead of generating new ones.
+
+**Revised scoring** ([decision 0014](decisions/0014-revised-decomposition-score.yaml),
+[`rescore-report.json`](data/processed/prompt-evaluation/rescore-report.json)). The frozen
+scorer maps an unmatched node to a sentinel before comparing prerequisite edges, so one
+disagreement about naming a step destroys every edge touching it. Computing edge metrics
+only between nodes both sides matched, and adding reference-free contract checks, raises the
+pass rate from 0.29-0.43 to 0.62-0.78 across the arms. Edge recall on matched nodes is
+**0.81-0.96**: the reported prerequisite recall of 0.41-0.55 was measuring node naming, not
+dependency correctness. 173 of 208 remaining failures are node matching. The ranking does not
+change, so the conclusion above is robust to the metric.
+
+**Reviewer agreement** ([decision 0015](decisions/0015-reviewer-agreement.yaml),
+[`reviewer-agreement.json`](data/processed/prompt-evaluation/reviewer-agreement.json)). The
+node-matching judgment is made by one model. Re-judging 240 recorded candidates (2,193
+equivalence decisions) with three reviewer models running the identical prompt:
+
+| Reviewer model | Node match | Implied revised pass |
+|---|---:|---:|
+| gemini-3-flash-preview | 0.768 | 0.822 |
+| gemini-2.5-pro (used in the experiments) | 0.704 | 0.742 |
+| gemini-3.1-pro-preview | 0.588 | 0.579 |
+
+Pairwise Cohen's kappa is 0.79-0.87 and three-rater Krippendorff alpha is 0.83, all above the
+0.60 floor of [decision 0011](decisions/0011-evaluation-design.yaml). Substantial per-decision
+agreement still leaves a **24.3-point swing** in the headline score from the choice of
+reviewer alone, against at most 14 points from every prompt and model change combined. A
+kappa threshold is therefore not a sufficient judge gate, every decomposition metric is
+reported conditional on its reviewer model, and human adjudication of the disagreements is
+the next required step.
+
+Local validation on **Python 3.13.15**: **177 tests passed**, **87% coverage** and
+**24 benchmark cases passed**. Lint, strict types, static security checks and the
 source/wheel build pass. No hosted continuous-integration workflow is configured at
 this time; the gate runs locally through `make ci`.
 

@@ -17,7 +17,6 @@ from google import genai
 
 from goes_natural_science_kg.eval.cases import load_cases
 from goes_natural_science_kg.eval.experiment import evaluate_request, read_observation
-from goes_natural_science_kg.eval.metrics import matched_keys
 from goes_natural_science_kg.schemas.base import content_hash
 from goes_natural_science_kg.schemas.orchestration import Decomposition
 from goes_natural_science_kg.schemas.prompt_evaluation import (
@@ -229,12 +228,18 @@ async def run_reviewer_probe(
         records.append(record)
         try:
             batch = BatchOutput[ReferenceReview].model_validate_json(record.response or "")
-            reviews = {r.case_id: r.output for r in batch.results}
         except ValueError:
+            # A failed request is missing data, never a judgment that nothing is equivalent.
             failures[reviewer.key] += 1
-            reviews = {}
+            return
         fresh[reviewer.key].extend(
-            pair_labels(cell.arm, cell.replicate, outputs_by_cell[cell.id], cases, reviews)
+            pair_labels(
+                cell.arm,
+                cell.replicate,
+                outputs_by_cell[cell.id],
+                cases,
+                {r.case_id: r.output for r in batch.results},
+            )
         )
 
     outputs_by_cell: dict[str, dict[str, Decomposition]] = {}
@@ -261,14 +266,25 @@ async def run_reviewer_probe(
     return recorded_labels, fresh, failures, records, candidates
 
 
-def node_match_from_labels(
+def reviewer_effect(
     labels: list[PairLabel], cases: dict[str, AnnotatedCase], candidates: dict[str, Decomposition]
-) -> float:
-    """Maximum bipartite matching per case, as the scorer does, from one reviewer's labels."""
+) -> tuple[float, float]:
+    """Node match rate and the revised pass rate this reviewer's labels would produce.
+
+    Design quality does not depend on the reviewer, so any difference in the pass rate comes
+    only from the equivalence judgments. Units the reviewer did not label are skipped.
+    """
+    from goes_natural_science_kg.eval.rescore import (
+        design_quality,
+        reference_agreement,
+        revised_pass,
+    )
+
     grouped: dict[tuple[str, int, str], list[PairLabel]] = {}
     for label in labels:
         grouped.setdefault((label.generator_arm, label.replicate, label.case_id), []).append(label)
-    rates = []
+    rates: list[float] = []
+    passes: list[bool] = []
     for (arm, replicate, case_id), items in grouped.items():
         candidate = candidates.get(f"{arm}|{replicate}|{case_id}")
         if candidate is None:
@@ -285,9 +301,12 @@ def node_match_from_labels(
             ),
             support=(),
         )
-        mapping = matched_keys(cases[case_id].expected, candidate, review)
-        rates.append(len(mapping) / len(cases[case_id].expected.micros))
-    return float(np.mean(rates)) if rates else 0.0
+        agreement = reference_agreement(cases[case_id], candidate, review)
+        rates.append(agreement.node_match_rate)
+        passes.append(revised_pass(agreement, design_quality(cases[case_id], candidate)))
+    if not rates:
+        return 0.0, 0.0
+    return float(np.mean(rates)), float(np.mean(passes))
 
 
 def make_reviewer_report(
@@ -333,11 +352,13 @@ def make_reviewer_report(
             )
     matrix: list[list[bool | None]] = [[indexed[n][k] for n in names] for k in shared]
     by_model = {r.key: r.model for r in plan.reviewers}
+    effects = {name: reviewer_effect(all_labels[name], cases, candidates) for name in names}
     summaries = tuple(
         ReviewerNodeMatch(
             reviewer=name,
             model=by_model[name],
-            node_match_rate=node_match_from_labels(all_labels[name], cases, candidates),
+            node_match_rate=effects[name][0],
+            implied_revised_pass_rate=effects[name][1],
             cases=len({(i.generator_arm, i.replicate, i.case_id) for i in all_labels[name]}),
             equivalent_pairs=sum(i.equivalent for i in all_labels[name]),
             judged_pairs=len(all_labels[name]),
@@ -346,6 +367,7 @@ def make_reviewer_report(
         for name in names
     )
     rates = [s.node_match_rate for s in summaries]
+    implied = [s.implied_revised_pass_rate for s in summaries]
     return ReviewerAgreementReport(
         plan_sha256=content_hash(plan),
         dataset_sha256=content_hash([c.model_dump(mode="json") for c in cases.values()]),
@@ -357,11 +379,13 @@ def make_reviewer_report(
         agreements=tuple(agreements),
         krippendorff_alpha=krippendorff_alpha_nominal(matrix),
         node_match_rate_spread=max(rates) - min(rates),
+        implied_pass_rate_spread=max(implied) - min(implied),
         limitations=(
             "Every rater is a model. Agreement between models bounds how much the score can be trusted; it is not human validation and cannot establish which reviewer is right.",
             "Raters share a prompt, a rubric and largely overlapping training data, so agreement is an optimistic upper bound on independence.",
             "Only revision-0 candidates are re-judged; later revisions react to the recorded reviewer's feedback and are not comparable across raters.",
             "Kappa is prevalence-sensitive: the candidate-by-expected grid is mostly non-equivalent by construction.",
-            "Node match rate is recomputed with the same maximum-matching rule as the frozen scorer, so differences come only from the equivalence labels.",
+            "Node match rate and the implied pass rate use the same matching rule and the same reviewer-independent design checks, so differences between reviewers come only from the equivalence labels.",
+            "The implied pass rate applies the revised rule of decision 0014 and inherits its declared, unvalidated thresholds.",
         ),
     )

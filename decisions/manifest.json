@@ -51,6 +51,10 @@
     "0014-revised-decomposition-score.yaml": {
       "bytes": 7961,
       "sha256": "f5e24a66f71fc4bf4e9d2d98ddbded5fc4840a9872e7958b6fab2d689d73bd09"
+    },
+    "0015-reviewer-agreement.yaml": {
+      "bytes": 8036,
+      "sha256": "15386f64103471a343866127c992be804cf973f9ac01853abbd40ebf033d8bd7"
     }
   },
   "generated_at": "2026-09-14T05:24:47.271353Z",
@@ -61,7 +65,7 @@
     "pyproject.toml": "2081c4ba20d5e8bdc50e30cd98bfb0b21977cac92d4bedaf8a77bd2378ec9920",
     "uv.lock": "8d9ad56bb70ac25eed88f91b2f12848fc1ead9a275cdff100c33b2ae157cfc32"
   },
-  "notes": "Research and implemented architecture decisions through Phase 6, proposed system and evaluation design (0010, 0011) and confidence calibration (0012) and the measured decomposition follow-up (0013) and the revised decomposition score (0014).",
+  "notes": "Research and implemented architecture decisions through Phase 6, proposed system and evaluation design (0010, 0011) and confidence calibration (0012) and the measured decomposition follow-up (0013) and the revised decomposition score (0014) and reviewer agreement (0015).",
   "schema_version": "artifact-manifest/1.0",
   "seed": 0,
   "settings_hash": "6e6558284e4205e98114b25e0e3305ee9c4ec4d52c78ab3acc3cc30f2f9a2cfe"

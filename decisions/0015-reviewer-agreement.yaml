@@ -1,0 +1,124 @@
+schema_version: architecture-decision/1.0
+id: '0015'
+title: 'Measure the reviewer that gates decomposition scores before trusting any score'
+status: accepted
+date: '2026-09-17'
+supersedes: null
+invariants:
+- 2
+- 3
+- 4
+- 8
+context: |
+  Decision 0014 located the limit of the decomposition score precisely: 173 of 208 failures
+  under the revised rule are the node-matching judgment, and once endpoints are restricted
+  to nodes both sides accept, dependency order is reproduced in 92 to 96 per cent of
+  comparable edges. That single judgment - is this candidate step the same step as this
+  reference step - is made by one model, gemini-2.5-pro, running the reference-review
+  prompt. Nothing in the repository had measured it. Decision 0011 requires exactly this
+  and names the statistics; decision 0013 already recorded that the five panel judges
+  report 0.97 to 1.00 accuracy only against trivially detectable synthetic negatives.
+
+  Human annotation remains the requirement of decisions 0010 and 0011 and is not replaced
+  here. What this decision establishes is the cheaper, prior question: does the reported
+  score depend on which model reviews, and by how much.
+options:
+- name: Re-judge recorded candidates with independent reviewer models (chosen)
+  pros:
+  - Generation is never repeated - the probe replays recorded revision-0 candidates, so the
+    only variable is the reviewer.
+  - Produces pairwise Cohen's kappa, three-rater Krippendorff alpha and, decisively, the
+    revised pass rate each reviewer would have produced on identical outputs.
+  - Cheap - 120 requests, USD 3.22 at list prices.
+  cons:
+  - Every rater is a model; agreement between models bounds trust but cannot say who is right.
+  - Raters share the prompt, the rubric and overlapping training data, so the measured
+    independence is an optimistic upper bound.
+- name: Wait for human annotation before measuring anything
+  pros:
+  - Only humans settle who is correct.
+  cons:
+  - Leaves every published number unqualified in the meantime, and would not have revealed
+    that reviewer choice outweighs generator choice.
+- name: Trust the recorded reviewer because its rubric is explicit
+  pros:
+  - No work.
+  cons:
+  - An explicit rubric constrains wording, not calibration; this is the assumption the
+    measurement refutes.
+criteria:
+- Only the reviewer varies; candidates, prompt, rubric, seed and temperature are held fixed.
+- A failed request is missing data, never a judgment that nothing is equivalent.
+- Agreement is computed over the full candidate-by-expected grid, so a pair a reviewer never
+  mentions counts as not equivalent rather than as absent.
+- The statistic matches the scale - binary Cohen's kappa per rater pair, nominal Krippendorff
+  alpha across three raters.
+- The aggregate effect on the published score is reported, not only per-decision concordance.
+decision: |
+  Add schemas/reviewer_agreement.py and eval/reviewer_agreement.py with a registered probe
+  that re-judges the recorded revision-0 candidates of two generator arms (few-shot-flash and
+  anchored-g3-flash, three replicates, 240 candidate decompositions, 2193 equivalence
+  decisions) with three reviewer models running the identical reference-review prompt:
+  gemini-2.5-pro replayed from the recorded experiment, gemini-3.1-pro-preview and
+  gemini-3-flash-preview. Published as data/processed/prompt-evaluation/reviewer-agreement.json.
+
+  MEASURED RESULT. Pairwise agreement is substantial by the usual rubric and passes the 0.60
+  floor declared in decision 0011: gemini-3-flash against gemini-2.5-pro kappa 0.869 (raw
+  0.952); gemini-3.1-pro against gemini-2.5-pro kappa 0.822 (raw 0.940); gemini-3-flash
+  against gemini-3.1-pro kappa 0.791 (raw 0.927). Three-rater Krippendorff alpha is 0.828.
+
+  The same three reviewers nevertheless imply materially different scores on identical
+  outputs. Node match rate: gemini-3-flash 0.768, gemini-2.5-pro 0.704, gemini-3.1-pro 0.588.
+  Revised pass rate under the rule of decision 0014, holding the reviewer-independent design
+  checks fixed: gemini-3-flash 0.822, gemini-2.5-pro 0.742, gemini-3.1-pro 0.579. The
+  disagreements are systematic, not symmetric: against gemini-3.1-pro, gemini-3-flash asserts
+  equivalence 142 times where the other does not and only 15 times the reverse.
+
+  THE FINDING THIS DECISION RECORDS. Changing the reviewer moves the headline score by 24.3
+  points. Every prompt and generator-model change measured in decision 0013 moved it by at
+  most 14 points, and the two best generator arms differ by 1.7 points under any reviewer.
+  The reviewer is a larger lever on the reported number than the thing the number is supposed
+  to measure. High per-decision concordance did not prevent this: kappa measures whether two
+  raters make the same call on the same item, not whether their aggregate is calibrated, so
+  a kappa threshold alone is not a sufficient judge gate.
+
+  Consequently: no decomposition score may be reported without naming its reviewer model and
+  version; decision 0011's judge gate is amended in practice to require an aggregate-effect
+  measurement alongside kappa; and human adjudication of a stratified sample of the
+  disagreements is the next required step, since no model rater can settle which of the three
+  is correct.
+consequences:
+- Every published decomposition metric names the reviewer model that produced it. The
+  follow-up and rescore reports are read as conditional on gemini-2.5-pro.
+- A judge gate on kappa alone is insufficient. Decision 0011's validation must also report
+  the aggregate shift a candidate judge would cause on the published metric.
+- The probe is reproducible offline - 120 scrubbed observations are retained under
+  data/processed/prompt-evaluation/observations and the report replays byte-identically.
+- Reviewer disagreement is systematic by model, so a reviewer change is a model drift event
+  in the sense of decision 0010 D3 and must trigger the canary.
+- One gemini-3-flash request failed and its unit is excluded rather than scored as
+  non-equivalent; the report records the failure and is marked not complete.
+- Human adjudication is still required. Stratify the sample on the 157 of 2145 shared
+  decisions where the two extreme reviewers disagree, since those carry the whole spread.
+- Kappa here is prevalence-sensitive - the candidate-by-expected grid is mostly
+  non-equivalent by construction - so raw agreement is reported beside it.
+enforced_by:
+- tests/integration/test_prompt_evaluation_replay.py::test_recorded_reviewer_probe_replays_to_the_committed_agreement_report
+- tests/unit/test_reviewer_agreement.py::test_cohen_kappa_matches_hand_computed_values
+- tests/unit/test_reviewer_agreement.py::test_krippendorff_alpha_handles_three_raters_and_missing_labels
+- tests/unit/test_reviewer_agreement.py::test_pair_labels_cover_the_full_grid_and_default_to_not_equivalent
+- tests/unit/test_reviewer_agreement.py::test_probe_plan_requires_exactly_one_recorded_reviewer
+- tests/unit/test_reviewer_agreement.py::test_a_missing_reviewer_unit_is_excluded_rather_than_counted_as_disagreement
+profile_tradeoffs:
+  curriculum_designer: Whether "identify the lit and unlit sides of a model Earth" and
+    "identify the Sun and Earth in a model" are the same learning step is a curricular
+    judgment a specialist must make; three models split on it, and the ministry will ask
+    which one the ranking depended on.
+  graph_theory_researcher: The vertex correspondence is an input to every graph metric here,
+    and it is estimated, not given. Reporting metrics without reporting the estimator and its
+    variance overstates their precision.
+  ai_software_engineer: Per-decision agreement and aggregate calibration are different
+    properties; a gate that tests only the first will pass a judge that systematically shifts
+    the published number.
+implementation_status: Measured on 2026-09-17 with 120 real Vertex requests, USD 3.22
+  estimated. No judge is promoted and no score is treated as validated.
